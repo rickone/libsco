@@ -11,23 +11,25 @@ enum {
     COROUTINE_DEAD,
 };
 
-class coroutine_t {
+class coroutine {
 public:
-    coroutine_t() = default;
-    virtual ~coroutine_t() = default;
+    coroutine() = default;
+    virtual ~coroutine() = default;
 
-    static coroutine_t* main();
-    static coroutine_t* self();
-    static coroutine_t* create(const std::function<void(void)>& func, size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
-    static void run(coroutine_t* co);
+    static void setup();
+    static coroutine* self();
+    static coroutine* create(const std::function<void(void)>& func, size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
 
     void init(const std::function<void(void)>& func, size_t stack_len);
-    void* resume(void* arg);
-    void* yiled(void* arg);
+    void set_self();
+    void* resume(void* arg = nullptr);
+    void* yield(void* arg = nullptr);
 
     int status() const { return _status; }
 
 private:
+    static void run(coroutine* co);
+
     char* _stack = nullptr;
     size_t _stack_len = 0;
     ucontext_t _ctx;
@@ -35,3 +37,6 @@ private:
     std::function<void(void)> _func;
     int _status = COROUTINE_RUNNING;
 };
+
+#define co_create(func) coroutine::create(func)
+#define co_yield() coroutine::self()->yield()

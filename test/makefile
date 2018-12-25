@@ -9,6 +9,6 @@ Define  = _XOPEN_SOURCE
 CFLAGS  =
 CXXFLAGS =
 LDFLAGS =
-AfterBuild =
+Rpath = ../lib
 
 include ../utils/makefile
