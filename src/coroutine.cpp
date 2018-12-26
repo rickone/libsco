@@ -82,7 +82,7 @@ xbin::object coroutine::resume() {
     swapcontext(&self->_ctx, &_ctx);
     self->set_self();
 
-    return _arg;
+    return std::move(_arg);
 }
 
 xbin::object coroutine::yield() {
@@ -90,5 +90,5 @@ xbin::object coroutine::yield() {
 
     swapcontext(&_ctx, _ctx.uc_link);
 
-    return _arg;
+    return std::move(_arg);
 }
