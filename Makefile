@@ -8,13 +8,13 @@ clean:
 	rm -rf obj
 	rm -rf include
 
-src:
+src: 3rd
 	$(MAKE) -C src
 
 test: src
 	$(MAKE) -C test
 
-3rd: 3rd/xbin/Makefile:
+3rd: 3rd/xbin/Makefile
 	$(MAKE) -C 3rd
 
 3rd/xbin/Makefile:
