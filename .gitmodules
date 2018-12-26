@@ -1,0 +1,3 @@
+[submodule "3rd/xbin"]
+	path = 3rd/xbin
+	url = https://github.com/rickone/xbin.git

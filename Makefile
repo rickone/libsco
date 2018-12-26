@@ -1,4 +1,4 @@
-.PHONY: all clean src test
+.PHONY: all clean src test 3rd
 
 all: src test
 
@@ -13,3 +13,9 @@ src:
 
 test: src
 	$(MAKE) -C test
+
+3rd: 3rd/xbin/Makefile:
+	$(MAKE) -C 3rd
+
+3rd/xbin/Makefile:
+	git submodule update --init
