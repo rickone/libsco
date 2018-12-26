@@ -69,11 +69,10 @@ void coroutine::set_self() {
         ctx->self = this;
 }
 
-void* coroutine::resume(void* arg) {
+xbin::object coroutine::resume() {
     if (_status != COROUTINE_SUSPEND)
-        return nullptr;
+        return xbin::object();
 
-    _arg = arg;
     _status = COROUTINE_RUNNING;
 
     auto self = coroutine::self();
@@ -86,8 +85,7 @@ void* coroutine::resume(void* arg) {
     return _arg;
 }
 
-void* coroutine::yield(void* arg) {
-    _arg = arg;
+xbin::object coroutine::yield() {
     _status = COROUTINE_SUSPEND;
 
     swapcontext(&_ctx, _ctx.uc_link);

@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <ucontext.h>
+#include "xbin.h"
 
 #define COROUTINE_DEFAULT_STACK_LEN (1024 * 256)
 
@@ -22,8 +23,13 @@ public:
 
     void init(const std::function<void(void)>& func, size_t stack_len);
     void set_self();
-    void* resume(void* arg = nullptr);
-    void* yield(void* arg = nullptr);
+    xbin::object resume();
+    xbin::object yield();
+
+    template<typename... A>
+    void set_args(A... args) {
+        _arg.store_args(args...);
+    }
 
     int status() const { return _status; }
 
@@ -33,10 +39,25 @@ private:
     char* _stack = nullptr;
     size_t _stack_len = 0;
     ucontext_t _ctx;
-    void* _arg = nullptr;
+    xbin::object _arg;
     std::function<void(void)> _func;
     int _status = COROUTINE_RUNNING;
 };
 
 #define co_create(func) coroutine::create(func)
-#define co_yield() coroutine::self()->yield()
+
+template<typename... A>
+inline xbin::object co_yield(A... args) {
+    auto co = coroutine::self();
+    co->set_args(args...);
+    return co->yield();
+}
+
+template<typename... A>
+inline xbin::object co_resume(coroutine* co, A... args) {
+    if (co->status() != COROUTINE_SUSPEND)
+        return xbin::object();
+
+    co->set_args(args...);
+    return co->resume();
+}

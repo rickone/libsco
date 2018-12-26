@@ -12,10 +12,12 @@ void foo() {
     puts("foo");
 
     auto co = co_create(hello);
-    co->resume();
-    co->resume();
+    co_resume(co);
+    co_resume(co);
 
-    co_yield();
+    for (int i = 0; i < 10; ++i) {
+        co_yield(i);
+    }
     puts("foo.end");
 }
 
@@ -23,8 +25,12 @@ void thread_func() {
     coroutine::setup();
 
     auto co = co_create(foo);
-    co->resume();
-    co->resume();
+    co_resume(co);
+
+    while (co->status() != COROUTINE_DEAD) {
+        auto arg = co_resume(co);
+        printf("resume: %d\n", arg.load<int>());
+    }
 }
 
 int main() {

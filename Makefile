@@ -14,8 +14,5 @@ src: 3rd
 test: src
 	$(MAKE) -C test
 
-3rd: 3rd/xbin/Makefile
+3rd:
 	$(MAKE) -C 3rd
-
-3rd/xbin/Makefile:
-	git submodule update --init

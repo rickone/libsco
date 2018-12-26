@@ -1,8 +1,8 @@
 Target  = test
-Include = ../include
+Include = ../include ../3rd/xbin/src
 Source  = $(shell find . -name "*.cpp")
-LibDir  = ../lib
-Lib     = async
+LibDir  = ../lib ../3rd/xbin/lib
+Lib     = async xbin
 ObjDir  = ../obj
 OutDir  = ../bin
 Define  = _XOPEN_SOURCE
