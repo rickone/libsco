@@ -17,6 +17,8 @@ enum {
 
 class coroutine {
 public:
+    typedef std::function<void(void)> func_t;
+    
     explicit coroutine(size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
     virtual ~coroutine();
 
@@ -46,7 +48,7 @@ private:
     void* _stack = nullptr;
     ucontext_t _ctx;
     xbin::object _val;
-    std::function<void(void)> _func;
+    func_t _func;
     int _status;
 };
 

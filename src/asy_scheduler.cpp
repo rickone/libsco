@@ -11,6 +11,11 @@ scheduler::~scheduler() {
     }
 }
 
+scheduler* scheduler::inst() {
+    static scheduler s_inst;
+    return &s_inst;
+}
+
 void scheduler::run() {
     _run_flag = true;
 
@@ -20,18 +25,14 @@ void scheduler::run() {
     on_thread();
 }
 
-void scheduler::add(decltype(uthread::func) func, void* arg) {
-    uthread ut = {.func = func, .arg = arg};
-    _uthreads.push((const char*)&ut, sizeof(ut));
+void scheduler::push_func(const coroutine::func_t& func) {
+    _funcs.push(func);
 }
 
-uthread* scheduler::pop_uthread() {
-    auto node = _uthreads.pop();
-    if (node == nullptr) {
-        return nullptr;
-    }
-
-    return (uthread*)node->data;
+coroutine::func_t scheduler::pop_func() {
+    coroutine::func_t func;
+    _funcs.pop(func);
+    return func;
 }
 
 void scheduler::on_thread() {
@@ -60,12 +61,9 @@ void scheduler::on_thread() {
 
         ti.tick();
 
-        auto ut = pop_uthread();
-        if (ut) {
+        auto func = pop_func();
+        if (func) {
             auto co = std::make_shared<coroutine>();
-            std::function<void(void)> func = [ut](){
-                ut->func(ut->arg);
-            };
             co->bind(func);
             co->resume();
             coroutine_list.push_back(co);
