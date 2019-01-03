@@ -8,7 +8,7 @@ OutDir  = ../lib
 Define  = _XOPEN_SOURCE
 CFLAGS  =
 CXXFLAGS =
-LDFLAGS =
+LDFLAGS = -flat_namespace
 AfterBuild = cp $(shell find . -name "*.h") ../include
 
 $(shell mkdir -p ../include)
