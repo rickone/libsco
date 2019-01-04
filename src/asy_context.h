@@ -10,6 +10,7 @@ struct context {
     timer* ti = nullptr;
 };
 
+context* init_context();
 context* get_context();
 
 } // asy

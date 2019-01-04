@@ -3,8 +3,8 @@
 
 using namespace asy;
 
-void timer::sleep(unsigned int ns, coroutine* co) {
-    auto tp = std::chrono::steady_clock::now() + std::chrono::nanoseconds(ns);
+void timer::sleep(unsigned int ms, coroutine* co) {
+    auto tp = std::chrono::steady_clock::now() + std::chrono::milliseconds(ms);
     _skiplist.create(tp, co);
 }
 

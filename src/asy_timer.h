@@ -8,7 +8,7 @@ namespace asy {
 
 class timer {
 public:
-    using time_point = std::chrono::steady_clock::time_point;
+	using time_point = std::chrono::steady_clock::time_point;
 
     timer() = default;
     virtual ~timer() = default;
@@ -20,6 +20,7 @@ private:
     skiplist<time_point, coroutine*, std::less<time_point>, 32> _skiplist;
 };
 
-void sleep(unsigned int ns);
+template <class Rep, class Period>
+void sleep_for(const chrono::duration<Rep,Period>& rel_time);
 
 } // asy

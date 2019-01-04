@@ -10,6 +10,7 @@ namespace asy {
 const int COROUTINE_DEFAULT_STACK_LEN = 1024 * 256;
 
 enum {
+    COROUTINE_UNINIT,
     COROUTINE_RUNNING,
     COROUTINE_SUSPEND,
     COROUTINE_DEAD,
@@ -19,12 +20,15 @@ class coroutine {
 public:
     typedef std::function<void(void)> func_t;
     
-    explicit coroutine(size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
+    coroutine() = default;
+    coroutine(int id, const func_t& func);
+    coroutine(const coroutine& other) = delete;
+    coroutine(coroutine&& other) = delete;
     virtual ~coroutine();
 
     static coroutine* self();
 
-    void bind(const std::function<void(void)>& func);
+    void init(const func_t& func = nullptr, size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
     void set_self();
     bool resume();
     void yield();
@@ -40,61 +44,63 @@ public:
         _val = std::move(val);
     }
 
+    int id() const { return _id; }
     int status() const { return _status; }
 
 private:
     static void body(coroutine* co);
 
+    int _id = -1;
+    func_t _func = nullptr;
     void* _stack = nullptr;
     ucontext_t _ctx;
+    int _status = COROUTINE_UNINIT;
     xbin::object _val;
-    func_t _func;
-    int _status;
 };
 
 template<typename R, typename... A>
 inline std::shared_ptr<coroutine> create_coroutine(const std::function<R (A...)>& func, size_t stack_len = COROUTINE_DEFAULT_STACK_LEN) {
-    auto co = std::make_shared<coroutine>(stack_len);
+    auto co = std::make_shared<coroutine>();
     std::function<void(void)> real_func = [co, func](){
         auto val = co->get_value();
         auto r = val.call(func);
         co->set_value(r);
     };
-    co->bind(real_func);
+    co->init(real_func, stack_len);
     return co;
 }
 
 template<typename R, typename... A>
 inline std::shared_ptr<coroutine> create_coroutine(R (*func)(A...), size_t stack_len = COROUTINE_DEFAULT_STACK_LEN) {
-    auto co = std::make_shared<coroutine>(stack_len);
+    auto co = std::make_shared<coroutine>();
     std::function<void(void)> real_func = [co, func](){
         auto val = co->get_value();
         auto r = val.call(func);
         co->set_value(r);
     };
-    co->bind(real_func);
+    co->init(real_func, stack_len);
     return co;
 }
 
 template<typename... A>
 inline std::shared_ptr<coroutine> create_coroutine(const std::function<void (A...)>& func, size_t stack_len = COROUTINE_DEFAULT_STACK_LEN) {
-    auto co = std::make_shared<coroutine>(stack_len);
+    auto co = std::make_shared<coroutine>();
     std::function<void(void)> real_func = [co, func](){
         auto val = co->get_value();
         val.invoke(func);
     };
-    co->bind(real_func);
+    co->init(real_func, stack_len);
     return co;
 }
 
 template<typename... A>
 inline std::shared_ptr<coroutine> create_coroutine(void (*func)(A...), size_t stack_len = COROUTINE_DEFAULT_STACK_LEN) {
-    auto co = std::make_shared<coroutine>(stack_len);
+    auto co = std::make_shared<coroutine>();
     std::function<void(void)> real_func = [co, func](){
         auto val = co->get_value();
         val.invoke(func);
     };
-    co->bind(real_func);
+    co->init(real_func, stack_len);
     return co;
 }
 
