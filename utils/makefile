@@ -11,8 +11,8 @@
 #LDFLAGS =
 #Rpath =
 
-#CC = gcc
-#CXX = g++
+#CC = cc
+#CXX = c++
 CFLAGS += $(Include:%=-I%) $(Define:%=-D%) -m64
 
 # Config: Debug/Release

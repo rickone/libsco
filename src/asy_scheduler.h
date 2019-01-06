@@ -1,31 +1,30 @@
 #pragma once
 
-#include <vector>
-#include <thread>
 #include "asy_coroutine.h"
 #include "asy_queue.h"
+#include "asy_executer.h"
 
 namespace asy {
 
 class scheduler {
 public:
     scheduler() = default;
-    ~scheduler();
+    virtual ~scheduler() = default;
 
     static scheduler* inst();
     
-    void run();
-    void push_func(const coroutine::func_t& func);
-    coroutine::func_t pop_func();
-
-    void quit() { _run_flag = false; }
+    int run(int (*main)(int, char*[]), int argc, char* argv[]);
+    std::shared_ptr<coroutine> start_coroutine(const coroutine::func_t& func);
+    std::shared_ptr<coroutine> pop_coroutine();
+    
+    bool is_running() const { return _run_flag; }
+    void quit(int code) { _code = code; _run_flag = false; }
 
 private:
-    void on_thread();
-
+    int _code = 0;
     volatile bool _run_flag = false;
-    queue<coroutine::func_t> _funcs;
-    std::vector<std::thread> _threads;
+    queue<std::shared_ptr<coroutine>> _coroutines;
+    executer _executers[4];
 };
 
 } // asy

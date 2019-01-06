@@ -1,14 +1,10 @@
 #include "asy_scheduler.h"
-#include "asy_timer.h"
-#include "asy_context.h"
+#include <signal.h>
 
 using namespace asy;
-using namespace std::chrono_literals;
 
-scheduler::~scheduler() {
-    for (auto& t : _threads) {
-        t.join();
-    }
+static void on_quit(int sig) {
+    scheduler::inst()->quit(1);
 }
 
 scheduler* scheduler::inst() {
@@ -16,59 +12,35 @@ scheduler* scheduler::inst() {
     return &s_inst;
 }
 
-void scheduler::run() {
+int scheduler::run(int (*main)(int, char*[]), int argc, char* argv[]) {
+    signal(SIGINT, on_quit); // ctrl + c
+    signal(SIGTERM, on_quit); // kill
+    signal(SIGQUIT, on_quit); // ctrl + '\'
+    signal(SIGCHLD, SIG_IGN);
+
+    start_coroutine([this, main, argc, argv](){
+        int ret = main(argc, argv);
+        quit(ret);
+    });
+
     _run_flag = true;
-
-    for (int i = 0; i < 4; ++i) {
-        _threads.emplace_back(std::bind(&scheduler::on_thread, this));
+    for (auto& obj : _executers) {
+        obj.run(this);
     }
-    on_thread();
-}
-
-void scheduler::push_func(const coroutine::func_t& func) {
-    _funcs.push(func);
-}
-
-coroutine::func_t scheduler::pop_func() {
-    coroutine::func_t func;
-    _funcs.pop(func);
-    return func;
-}
-
-void scheduler::on_thread() {
-    coroutine co;
-    timer ti;
-
-    auto ctx = get_context();
-    ctx->co = &co;
-    ctx->ti = &ti;
-
-    std::list<std::shared_ptr<coroutine>> coroutine_list;
-
-    while (_run_flag) {
-        //auto tp_begin = std::chrono::steady_clock::now();
-
-        auto it = coroutine_list.begin();
-        auto it_end = coroutine_list.end();
-        while (it != it_end) {
-            auto& co = *it;
-            if (co->status() == COROUTINE_DEAD) {
-                coroutine_list.erase(it++);
-            } else {
-                ++it;
-            }
-        }
-
-        ti.tick();
-
-        auto func = pop_func();
-        if (func) {
-            auto co = std::make_shared<coroutine>();
-            co->bind(func);
-            co->resume();
-            coroutine_list.push_back(co);
-        }
-
-        std::this_thread::sleep_for(10ms);
+    for (auto& obj : _executers) {
+        obj.join();
     }
+    return _code;
+}
+
+std::shared_ptr<coroutine> scheduler::start_coroutine(const coroutine::func_t& func) {
+    auto co = std::make_shared<coroutine>(-1, func);
+    _coroutines.push(co);
+    return co;
+}
+
+std::shared_ptr<coroutine> scheduler::pop_coroutine() {
+    std::shared_ptr<coroutine> co;
+    _coroutines.pop(co);
+    return co;
 }

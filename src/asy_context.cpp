@@ -1,27 +1,28 @@
 #include "asy_context.h"
-#include "pthread.h"
+#include <cstdlib> // malloc, free
+#include <pthread.h>
 
 using namespace asy;
 
-static std::once_flag s_init_context_flag;
 static pthread_key_t s_context_key;
+static pthread_once_t s_context_once;
 
 static void delete_context(void* ctx) {
-    delete (context*)ctx;
+    free(ctx);
 }
 
-static void init_context_key() {
+static void make_context_key() {
     pthread_key_create(&s_context_key, delete_context);
 }
 
+context* asy::init_context() {
+    pthread_once(&s_context_once, make_context_key);
+
+    auto ctx = malloc(sizeof(context));
+    pthread_setspecific(s_context_key, ctx);
+    return (context*)ctx;
+}
+
 context* asy::get_context() {
-    auto ctx = (context*)pthread_getspecific(s_context_key);
-    if (ctx == nullptr) {
-        std::call_once(s_init_context_flag, init_context_key);
-
-        ctx = new context();
-        pthread_setspecific(s_context_key, ctx);
-    }
-
-    return ctx;
+    return (context*)pthread_getspecific(s_context_key);
 }

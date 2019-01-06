@@ -1,22 +1,31 @@
 #include "cstdio"
 #include "asy_scheduler.h"
 #include "asy_timer.h"
+#include <thread>
+#include <vector>
+#include <chrono>
+
+using namespace std::chrono_literals;
 
 void foo(int start, int n) {
     for (int i = 0; i < n; ++i) {
         fprintf(stdout, "%04d\n", start + i);
         fflush(stdout);
         
-        asy::sleep(100'000'000);
+        asy::sleep_for(10ms);
     }
-    fprintf(stderr, "foo[%d] exit\n", start);
 }
 
-int main() {
-    auto sch = asy::scheduler::inst();
-    for (int i = 0; i < 100; ++i) {
-        sch->push_func(std::bind(foo, i * 100, 100));
+int asy_main(int argc, char* argv[]) {
+    puts("Hello World!");
+    for (int i = 0; i < 10; ++i) {
+        asy::scheduler::inst()->start_coroutine(std::bind(foo, i * 2, 2));
     }
-    sch->run();
+
+    asy::sleep_for(100ms);
     return 0;
+}
+
+int main(int argc, char* argv[]) {
+    return asy::scheduler::inst()->run(asy_main, argc, argv);
 }
