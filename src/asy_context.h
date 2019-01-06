@@ -1,9 +1,9 @@
 #pragma once
 
-#include "asy_coroutine.h"
-#include "asy_timer.h"
-
 namespace asy {
+
+class coroutine;
+class timer;
 
 struct context {
     coroutine* co = nullptr;

@@ -5,15 +5,6 @@
 
 ASY_OVERRIDE(pthread_create)
 int pthread_create(pthread_t* thread, const pthread_attr_t* attr, void*(*start_routine)(void*), void* arg) {
-    /*
-    asy::coroutine::func_t func = [start_routine, arg](){
-        start_routine(arg);
-    };
-    auto co = asy::scheduler::inst()->create_coroutine(func);
-    puts("pthread_create hooked, co[%d]: %p", co->id(), co.get());
-    *thread = (pthread_t)co.get();
-    return 0;
-    */
     puts("pthread_create hooked");
     return ASY_ORIGIN(pthread_create)(thread, attr, start_routine, arg);
 }

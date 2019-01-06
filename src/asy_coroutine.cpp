@@ -1,6 +1,6 @@
 #include "asy_coroutine.h"
-#include <cstdlib>
-#include <mutex>
+#include <cstdlib> // malloc, free
+//#include <mutex>
 #include <cassert>
 #include "asy_scheduler.h"
 #include "asy_context.h"

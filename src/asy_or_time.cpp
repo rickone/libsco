@@ -1,6 +1,6 @@
 #include "asy_override.h"
 #include <cstdio>
-#include <unistd.h>
+#include <unistd.h> // usleep
 #include <time.h>
 
 ASY_OVERRIDE(usleep)

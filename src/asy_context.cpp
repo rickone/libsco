@@ -1,5 +1,6 @@
 #include "asy_context.h"
-#include "pthread.h"
+#include <cstdlib> // malloc, free
+#include <pthread.h>
 
 using namespace asy;
 
