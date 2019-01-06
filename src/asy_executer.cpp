@@ -1,14 +1,13 @@
 #include "asy_executer.h"
-#include <time.h> // nanosleep
 #include "asy_scheduler.h"
 #include "asy_coroutine.h"
 #include "asy_timer.h"
+#include "asy_selector.h"
 #include "asy_context.h"
 #include "asy_override.h"
 
 ASY_ORIGIN_DEF(pthread_create);
 ASY_ORIGIN_DEF(pthread_join);
-ASY_ORIGIN_DEF(nanosleep);
 
 using namespace asy;
 using namespace std::chrono_literals;
@@ -29,13 +28,18 @@ void executer::join() {
 }
 
 void executer::on_exec() {
-    coroutine co;
-    co.init();
-    timer ti;
+    coroutine self;
+    self.init();
+
+    timer timer;
+
+    selector selector;
+    selector.init();
 
     auto ctx = init_context();
-    ctx->co = &co;
-    ctx->ti = &ti;
+    ctx->self = &self;
+    ctx->timer = &timer;
+    ctx->selector = &selector;
 
     std::list<std::shared_ptr<coroutine>> coroutine_list;
 
@@ -53,7 +57,7 @@ void executer::on_exec() {
             }
         }
 
-        ti.tick();
+        timer.tick();
 
         auto co = _sche->pop_coroutine();
         if (co) {
@@ -62,7 +66,6 @@ void executer::on_exec() {
             coroutine_list.push_back(co);
         }
 
-        struct timespec req = {.tv_sec = 0, .tv_nsec = 10'000'000};
-        ASY_ORIGIN(nanosleep)(&req, nullptr);
+        selector.select(10'000'000);
     }
 }

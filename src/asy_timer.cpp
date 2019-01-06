@@ -29,6 +29,6 @@ void timer::tick() {
 
 void asy::nsleep(int64_t ns) {
     auto ctx = get_context();
-    ctx->ti->sleep(ns, ctx->co);
-    ctx->co->yield();
+    ctx->timer->sleep(ns, ctx->self);
+    ctx->self->yield();
 }
