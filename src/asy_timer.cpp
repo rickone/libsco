@@ -3,8 +3,8 @@
 
 using namespace asy;
 
-void timer::sleep(unsigned int ms, coroutine* co) {
-    auto tp = std::chrono::steady_clock::now() + std::chrono::milliseconds(ms);
+void timer::sleep(int64_t ns, coroutine* co) {
+    auto tp = std::chrono::steady_clock::now() + std::chrono::nanoseconds(ns);
     _skiplist.create(tp, co);
 }
 
@@ -27,7 +27,7 @@ void timer::tick() {
     }
 }
 
-void asy::sleep(unsigned int ns) {
+void asy::nsleep(int64_t ns) {
     auto ctx = get_context();
     ctx->ti->sleep(ns, ctx->co);
     ctx->co->yield();
