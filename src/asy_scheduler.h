@@ -18,11 +18,10 @@ public:
     static scheduler* inst();
     
     int run(int (*main)(int, char*[]), int argc, char* argv[]);
-    void activate();
     std::shared_ptr<coroutine> start_coroutine(const coroutine::func_t& func);
     std::shared_ptr<coroutine> pop_coroutine();
-
-    void on_request(int type, const box::object& obj);
+    void on_exec();
+    void on_request(int type, box::object& obj);
     void on_test(int a, int b);
 
     bool is_running() const { return _run_flag; }

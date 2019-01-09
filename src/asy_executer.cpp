@@ -18,7 +18,8 @@ static void* start_routine(void* arg) {
     return nullptr;
 }
 
-void executer::run(scheduler* sche) {
+void executer::run(int id, scheduler* sche) {
+    _id = id;
     _sche = sche;
     ASY_ORIGIN(pthread_create)(&_thread, nullptr, start_routine, this);
 }
@@ -41,17 +42,24 @@ void executer::on_exec() {
     ctx->timer = &timer;
     ctx->poller = &poller;
 
-    std::list<std::shared_ptr<coroutine>> coroutine_list;
-
     while (_sche->is_running()) {
         //auto tp_begin = std::chrono::steady_clock::now();
+        while (true) {
+            box::object obj;
+            if (!_requests.pop(obj)) {
+                break;
+            }
+
+            auto type = obj.load<int>();
+            on_request(type, obj);
+        }
         
-        auto it = coroutine_list.begin();
-        auto it_end = coroutine_list.end();
+        auto it = _coroutine_list.begin();
+        auto it_end = _coroutine_list.end();
         while (it != it_end) {
             auto& co = *it;
             if (co->status() == COROUTINE_DEAD) {
-                coroutine_list.erase(it++);
+                _coroutine_list.erase(it++);
             } else {
                 ++it;
             }
@@ -63,9 +71,21 @@ void executer::on_exec() {
         if (co) {
             co->init();
             co->resume();
-            coroutine_list.push_back(co);
+            _coroutine_list.push_back(co);
         }
 
         poller.wait(10'000'000);
     }
+}
+
+void executer::on_request(int type, box::object& obj) {
+    switch (type) {
+        case sch_test:
+            obj.invoke(&executer::on_test, this);
+            break;
+    }
+}
+
+void executer::on_test(int a, int b) {
+
 }
