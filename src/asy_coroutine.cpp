@@ -18,7 +18,7 @@ coroutine::~coroutine() {
 
 coroutine* coroutine::self() {
     auto ctx = get_context();
-    return ctx ? ctx->co : nullptr;
+    return ctx ? ctx->self : nullptr;
 }
 
 void coroutine::body(coroutine* co) {
@@ -57,7 +57,7 @@ void coroutine::set_self() {
         throw std::runtime_error("thread.ctx is null");
     }
     
-    ctx->co = this;
+    ctx->self = this;
 }
 
 bool coroutine::resume() {

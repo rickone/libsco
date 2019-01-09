@@ -4,10 +4,12 @@ namespace asy {
 
 class coroutine;
 class timer;
+class poller;
 
 struct context {
-    coroutine* co = nullptr;
-    timer* ti = nullptr;
+    coroutine* self = nullptr;
+    timer* timer = nullptr;
+    poller* poller = nullptr;
 };
 
 context* init_context();
