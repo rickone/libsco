@@ -37,7 +37,7 @@ void scheduler::activate() {
     while (_run_flag) {
         bool idle = true;
         while (true) {
-            xbin::object obj;
+            box::object obj;
             if (!_requests.pop(obj)) {
                 break;
             }
@@ -68,7 +68,7 @@ std::shared_ptr<coroutine> scheduler::pop_coroutine() {
     return co;
 }
 
-void scheduler::on_request(int type, const xbin::object& obj) {
+void scheduler::on_request(int type, const box::object& obj) {
     switch (type) {
         case sch_test:
             obj.invoke(std::bind(&scheduler::on_test, this));

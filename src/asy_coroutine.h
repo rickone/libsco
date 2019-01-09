@@ -3,7 +3,7 @@
 #include <functional>
 #include <memory>
 #include <ucontext.h>
-#include "xbin.h"
+#include "box.h"
 
 namespace asy {
 
@@ -33,14 +33,14 @@ public:
     bool resume();
     void yield();
 
-    xbin::object get_value() { return std::move(_val); }
+    box::object get_value() { return std::move(_val); }
 
     template<typename... A>
     void set_value(A... args) {
         _val.store_args(args...);
     }
 
-    void move_value(xbin::object&& val) {
+    void move_value(box::object&& val) {
         _val = std::move(val);
     }
 
@@ -55,7 +55,7 @@ private:
     void* _stack = nullptr;
     ucontext_t _ctx;
     int _status = COROUTINE_UNINIT;
-    xbin::object _val;
+    box::object _val;
 };
 
 template<typename R, typename... A>
@@ -105,7 +105,7 @@ inline std::shared_ptr<coroutine> create_coroutine(void (*func)(A...), size_t st
 }
 
 template<typename... A>
-inline xbin::object yield(A... args) {
+inline box::object yield(A... args) {
     auto co = coroutine::self();
     co->set_value(args...);
     co->yield();
@@ -113,9 +113,9 @@ inline xbin::object yield(A... args) {
 }
 
 template<typename... A>
-inline xbin::object resume(const std::shared_ptr<coroutine>& co, A... args) {
+inline box::object resume(const std::shared_ptr<coroutine>& co, A... args) {
     if (co->status() != COROUTINE_SUSPEND)
-        return xbin::object();
+        return box::object();
 
     co->set_value(args...);
     co->resume();

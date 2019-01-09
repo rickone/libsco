@@ -1,12 +1,12 @@
-.PHONY: all clean xbin
+.PHONY: all clean box
 
-all: xbin
+all: box
 
 clean:
-	$(MAKE) -C xbin clean
+	$(MAKE) -C box clean
 
-xbin: xbin/Makefile
-	$(MAKE) -C xbin
+box: box/Makefile
+	$(MAKE) -C box
 
-xbin/Makefile:
+box/Makefile:
 	git submodule update --init

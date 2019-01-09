@@ -22,7 +22,7 @@ public:
     std::shared_ptr<coroutine> start_coroutine(const coroutine::func_t& func);
     std::shared_ptr<coroutine> pop_coroutine();
 
-    void on_request(int type, const xbin::object& obj);
+    void on_request(int type, const box::object& obj);
     void on_test(int a, int b);
 
     bool is_running() const { return _run_flag; }
@@ -30,7 +30,7 @@ public:
 
     template<typename... A>
     void request(int type, A... args) {
-        xbin::object obj;
+        box::object obj;
         obj.store(type);
         obj.store(args...);
         _requests.push(std::move(obj));
@@ -41,7 +41,7 @@ private:
     volatile bool _run_flag = false;
     queue<std::shared_ptr<coroutine>> _coroutines;
     executer _executers[4];
-    queue<xbin::object> _requests;
+    queue<box::object> _requests;
 };
 
 } // asy

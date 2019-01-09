@@ -1,8 +1,8 @@
 Target  = libasync.so
-Include = ../3rd/xbin/src
+Include = ../3rd/box/src
 Source  = $(shell find . -name "*.cpp")
-LibDir  = ../lib ../3rd/xbin/lib
-Lib     = xbin
+LibDir  = ../lib ../3rd/box/lib
+Lib     = box
 ObjDir  = ../obj
 OutDir  = ../lib
 Define  = _XOPEN_SOURCE
