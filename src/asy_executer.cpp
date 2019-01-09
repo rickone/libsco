@@ -2,7 +2,7 @@
 #include "asy_scheduler.h"
 #include "asy_coroutine.h"
 #include "asy_timer.h"
-#include "asy_selector.h"
+#include "asy_poller.h"
 #include "asy_context.h"
 #include "asy_override.h"
 
@@ -33,13 +33,13 @@ void executer::on_exec() {
 
     timer timer;
 
-    selector selector;
-    selector.init();
+    poller poller;
+    poller.init();
 
     auto ctx = init_context();
     ctx->self = &self;
     ctx->timer = &timer;
-    ctx->selector = &selector;
+    ctx->poller = &poller;
 
     std::list<std::shared_ptr<coroutine>> coroutine_list;
 
@@ -66,6 +66,6 @@ void executer::on_exec() {
             coroutine_list.push_back(co);
         }
 
-        selector.select(10'000'000);
+        poller.wait(10'000'000);
     }
 }

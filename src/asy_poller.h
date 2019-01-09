@@ -13,16 +13,16 @@ enum {
     SELECT_READ_WRITE,
 };
 
-class selector {
+class poller {
 public:
-    selector() = default;
-    virtual ~selector();
+    poller() = default;
+    virtual ~poller();
 
     void init();
     void add(int fd, int event_flag, coroutine* co);
     void set(int fd, int event_flag, coroutine* co);
     void remove(int fd);
-    void select(int64_t ns);
+    void wait(int64_t ns);
 
 private:
     int _fd = -1;

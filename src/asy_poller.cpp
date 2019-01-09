@@ -1,4 +1,5 @@
-#include "asy_selector.h"
+#include "asy_poller.h"
+#include <unistd.h>
 #include <cerrno>
 
 using namespace asy;
@@ -6,17 +7,17 @@ using namespace asy;
 #ifdef __linux__
 #include <sys/epoll.h>
 
-selector::~selector() {
+poller::~poller() {
     if (_fd >= 0) {
         close(_fd);
     }
 }
 
-void selector::init() {
+void poller::init() {
     _fd = epoll_create(1024);
 }
 
-void selector::add(int fd, int event_flag, coroutine* co) {
+void poller::add(int fd, int event_flag, coroutine* co) {
     struct epoll_event event;
     event.events = EPOLLET;
     event.data.ptr = co;
@@ -32,7 +33,7 @@ void selector::add(int fd, int event_flag, coroutine* co) {
     epoll_ctl(_fd, EPOLL_CTL_ADD, fd, &event);
 }
 
-void selector::set(int fd, int event_flag, coroutine* co) {
+void poller::set(int fd, int event_flag, coroutine* co) {
     struct epoll_event event;
     event.events = EPOLLET;
     event.data.ptr = socket;
@@ -48,11 +49,11 @@ void selector::set(int fd, int event_flag, coroutine* co) {
     epoll_ctl(_fd, EPOLL_CTL_MOD, fd, &event);
 }
 
-void selector::remove(int fd) {
+void poller::remove(int fd) {
     epoll_ctl(_fd, EPOLL_CTL_DEL, fd, nullptr);
 }
 
-void selector::select(int64_t ns) {
+void poller::wait(int64_t ns) {
     static struct epoll_event events[MAX_SELECT_COUNT];
     
     int event_cnt = epoll_wait(_fd, events, MAX_SELECT_COUNT, (int)(ns / 1'000'000));
@@ -83,17 +84,17 @@ void selector::select(int64_t ns) {
 #ifdef __APPLE__
 #include <sys/event.h>
 
-selector::~selector() {
+poller::~poller() {
     if (_fd >= 0) {
         close(_fd);
     }
 }
 
-void selector::init() {
+void poller::init() {
     _fd = kqueue();
 }
 
-void selector::add(int fd, int event_flag, coroutine* co) {
+void poller::add(int fd, int event_flag, coroutine* co) {
     struct kevent events[2];
     EV_SET(&events[0], fd, EVFILT_READ,  EV_ADD | ((event_flag & SELECT_READ) ? EV_ENABLE : EV_DISABLE), 0, 0, co);
     EV_SET(&events[1], fd, EVFILT_WRITE, EV_ADD | ((event_flag & SELECT_WRITE) ? EV_ENABLE : EV_DISABLE), 0, 0, co);
@@ -101,7 +102,7 @@ void selector::add(int fd, int event_flag, coroutine* co) {
     kevent(_fd, &events[0], 2, nullptr, 0, nullptr);
 }
 
-void selector::set(int fd, int event_flag, coroutine* co) {
+void poller::set(int fd, int event_flag, coroutine* co) {
     if (event_flag == SELECT_NONE) {
         remove(fd);
     } else {
@@ -109,7 +110,7 @@ void selector::set(int fd, int event_flag, coroutine* co) {
     }
 }
 
-void selector::remove(int fd) {
+void poller::remove(int fd) {
     struct kevent events[2]; 
     EV_SET(&events[0], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
     EV_SET(&events[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
@@ -117,7 +118,7 @@ void selector::remove(int fd) {
     kevent(_fd, &events[0], 2, nullptr, 0, nullptr);
 }
 
-void selector::select(int64_t ns) {
+void poller::wait(int64_t ns) {
     static struct kevent events[MAX_SELECT_COUNT];
 
     struct timespec ts;
