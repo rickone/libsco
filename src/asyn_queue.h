@@ -3,7 +3,7 @@
 #include <atomic>
 #include <string>
 
-namespace asy {
+namespace asyn {
 
 template<typename T>
 class queue {
@@ -63,4 +63,4 @@ private:
     std::atomic<node_t*> _tail;
 };
 
-} // asy
+} // asyn

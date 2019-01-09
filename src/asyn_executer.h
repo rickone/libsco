@@ -1,10 +1,10 @@
 #pragma once
 
 #include <pthread.h>
-#include "asy_coroutine.h"
-#include "asy_queue.h"
+#include "asyn_coroutine.h"
+#include "asyn_queue.h"
 
-namespace asy {
+namespace asyn {
 
 enum {
     exe_test,
@@ -39,4 +39,4 @@ private:
     queue<box::object> _requests;
 };
 
-} // asy
+} // asyn

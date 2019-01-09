@@ -1,6 +1,6 @@
 #pragma once
 
-namespace asy {
+namespace asyn {
 
 class coroutine;
 class timer;
@@ -15,4 +15,4 @@ struct context {
 context* init_context();
 context* get_context();
 
-} // asy
+} // asyn

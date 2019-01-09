@@ -1,7 +1,7 @@
-#include "asy_timer.h"
-#include "asy_context.h"
+#include "asyn_timer.h"
+#include "asyn_context.h"
 
-using namespace asy;
+using namespace asyn;
 
 void timer::sleep(int64_t ns, coroutine* co) {
     auto tp = std::chrono::steady_clock::now() + std::chrono::nanoseconds(ns);
@@ -27,7 +27,7 @@ void timer::tick() {
     }
 }
 
-void asy::nsleep(int64_t ns) {
+void asyn::nsleep(int64_t ns) {
     auto ctx = get_context();
     ctx->timer->sleep(ns, ctx->self);
     ctx->self->yield();

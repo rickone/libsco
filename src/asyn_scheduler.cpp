@@ -1,11 +1,11 @@
-#include "asy_scheduler.h"
+#include "asyn_scheduler.h"
 #include <signal.h>
 #include <time.h>
-#include "asy_override.h"
+#include "asyn_override.h"
 
 ASY_ORIGIN_DEF(nanosleep);
 
-using namespace asy;
+using namespace asyn;
 
 static void on_quit(int sig) {
     scheduler::inst()->quit(1);

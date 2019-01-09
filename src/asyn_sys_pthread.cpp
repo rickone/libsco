@@ -1,7 +1,7 @@
-#include "asy_override.h"
+#include "asyn_override.h"
 #include <cstdio>
 #include <pthread.h>
-#include "asy_scheduler.h"
+#include "asyn_scheduler.h"
 
 ASY_OVERRIDE(pthread_create)
 int pthread_create(pthread_t* thread, const pthread_attr_t* attr, void*(*start_routine)(void*), void* arg) {

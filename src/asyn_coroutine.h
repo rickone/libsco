@@ -5,7 +5,7 @@
 #include <ucontext.h>
 #include "box.h"
 
-namespace asy {
+namespace asyn {
 
 const int COROUTINE_DEFAULT_STACK_LEN = 1024 * 256;
 
@@ -122,4 +122,4 @@ inline box::object resume(const std::shared_ptr<coroutine>& co, A... args) {
     return co->get_value();
 }
 
-} // asy
+} // asyn

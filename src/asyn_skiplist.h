@@ -5,7 +5,7 @@
 #include <algorithm> // min
 #include <random>
 
-namespace asy {
+namespace asyn {
 
 template<typename K, typename V, typename C, int I>
 class skiplist {
@@ -363,4 +363,4 @@ private:
     std::uniform_int_distribution<int> _random_dis;
 };
 
-} // asy
+} // asyn

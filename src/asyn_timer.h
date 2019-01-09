@@ -1,10 +1,10 @@
 #pragma once
 
 #include <chrono>
-#include "asy_skiplist.h"
-#include "asy_coroutine.h"
+#include "asyn_skiplist.h"
+#include "asyn_coroutine.h"
 
-namespace asy {
+namespace asyn {
 
 class timer {
 public:
@@ -28,4 +28,4 @@ void sleep_for(const std::chrono::duration<Rep, Period>& dtn) {
     nsleep(nsdtn.count());
 }
 
-} // asy
+} // asyn

@@ -1,4 +1,4 @@
-Target  = libasync.so
+Target  = libasyn.so
 Include = ../3rd/box/src
 Source  = $(shell find . -name "*.cpp")
 LibDir  = ../lib ../3rd/box/lib

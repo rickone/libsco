@@ -1,11 +1,11 @@
-#include "asy_coroutine.h"
+#include "asyn_coroutine.h"
 #include <cstdlib> // malloc, free
 //#include <mutex>
 #include <cassert>
-#include "asy_scheduler.h"
-#include "asy_context.h"
+#include "asyn_scheduler.h"
+#include "asyn_context.h"
 
-using namespace asy;
+using namespace asyn;
 
 coroutine::coroutine(int id, const func_t& func) : _id(id), _func(func) {
 }
