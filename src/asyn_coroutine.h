@@ -16,7 +16,7 @@ enum {
     COROUTINE_DEAD,
 };
 
-class coroutine {
+class coroutine : public std::enable_shared_from_this<coroutine> {
 public:
     typedef std::function<void(void)> func_t;
     
@@ -32,6 +32,8 @@ public:
     void set_self();
     bool resume();
     void yield();
+    void join();
+    void detach();
 
     box::object get_value() { return std::move(_val); }
 
@@ -50,12 +52,14 @@ public:
 private:
     static void body(coroutine* co);
 
-    int _id = -1;
+    int _id = 0;
     func_t _func = nullptr;
     void* _stack = nullptr;
     ucontext_t _ctx;
     int _status = COROUTINE_UNINIT;
     box::object _val;
+    int _join_id = 0;
+    bool _detach = false;
 };
 
 template<typename R, typename... A>
@@ -106,10 +110,10 @@ inline std::shared_ptr<coroutine> create_coroutine(void (*func)(A...), size_t st
 
 template<typename... A>
 inline box::object yield(A... args) {
-    auto co = coroutine::self();
-    co->set_value(args...);
-    co->yield();
-    return co->get_value();
+    auto self = coroutine::self();
+    self->set_value(args...);
+    self->yield();
+    return self->get_value();
 }
 
 template<typename... A>

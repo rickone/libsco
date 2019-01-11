@@ -1,5 +1,5 @@
 #include "asyn_timer.h"
-#include "asyn_context.h"
+#include "asyn_worker.h"
 
 using namespace asyn;
 
@@ -28,7 +28,8 @@ void timer::tick() {
 }
 
 void asyn::nsleep(int64_t ns) {
-    auto ctx = get_context();
-    ctx->timer->sleep(ns, ctx->self);
-    ctx->self->yield();
+    auto worker = worker::current();
+    auto self = worker->co_self();
+    worker->timer_inst()->sleep(ns, self);
+    self->yield();
 }

@@ -1,5 +1,5 @@
 #include "cstdio"
-#include "asyn_scheduler.h"
+#include "asyn_master.h"
 #include "asyn_timer.h"
 #include <thread>
 #include <vector>
@@ -18,14 +18,19 @@ void foo(int start, int n) {
 
 int asyn_main(int argc, char* argv[]) {
     puts("Hello World!");
+
+    std::vector<std::shared_ptr<asyn::coroutine>> coroutines;
     for (int i = 0; i < 10; ++i) {
-        asyn::scheduler::inst()->start_coroutine(std::bind(foo, i * 2, 2));
+        coroutines.push_back(asyn::master::inst()->start_coroutine(std::bind(foo, i * 2, 2)));
     }
 
-    asyn::sleep_for(100ms);
+    for (auto& co : coroutines) {
+        co->join();
+    }
+
     return 0;
 }
 
 int main(int argc, char* argv[]) {
-    return asyn::scheduler::inst()->run(asyn_main, argc, argv);
+    return asyn::master::inst()->run(asyn_main, argc, argv);
 }

@@ -1,9 +1,8 @@
 #include "asyn_coroutine.h"
 #include <cstdlib> // malloc, free
-//#include <mutex>
 #include <cassert>
-#include "asyn_scheduler.h"
-#include "asyn_context.h"
+#include "asyn_master.h"
+#include "asyn_worker.h"
 
 using namespace asyn;
 
@@ -17,8 +16,7 @@ coroutine::~coroutine() {
 }
 
 coroutine* coroutine::self() {
-    auto ctx = get_context();
-    return ctx ? ctx->self : nullptr;
+    return worker::current()->co_self();
 }
 
 void coroutine::body(coroutine* co) {
@@ -52,12 +50,7 @@ void coroutine::init(const func_t& func, size_t stack_len) {
 }
 
 void coroutine::set_self() {
-    auto ctx = get_context();
-    if (ctx == nullptr) {
-        throw std::runtime_error("thread.ctx is null");
-    }
-    
-    ctx->self = this;
+    worker::current()->set_co_self(this);
 }
 
 bool coroutine::resume() {
@@ -81,4 +74,27 @@ void coroutine::yield() {
     _status = COROUTINE_SUSPEND;
 
     swapcontext(&_ctx, _ctx.uc_link);
+}
+
+void coroutine::join() {
+    if (_detach) {
+        return;
+    }
+
+    auto self = coroutine::self();
+    if (this == self) {
+        return;
+    }
+
+    if (_join_id > 0) {
+        return;
+    }
+
+    _join_id = self->id();
+    master::inst()->request(sch_join, self->id(), _id);
+    worker::current()->yield(self);
+}
+
+void coroutine::detach() {
+    _detach = true;
 }
