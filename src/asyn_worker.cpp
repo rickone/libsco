@@ -28,9 +28,8 @@ worker* worker::current() {
     return (worker*)pthread_getspecific(s_context_key);
 }
 
-void worker::run(int id, master* sche) {
+void worker::run(int id) {
     _id = id;
-    _sche = sche;
     ASYN_ORIGIN(pthread_create)(&_thread, nullptr, start_routine, this);
 }
 
@@ -57,7 +56,8 @@ void worker::on_exec() {
     
     _poller.init();
 
-    while (_sche->is_running()) {
+    master* inst = master::inst();
+    while (inst->is_running()) {
         //auto tp_begin = std::chrono::steady_clock::now();
         while (true) {
             box::object obj;
@@ -66,7 +66,7 @@ void worker::on_exec() {
             }
 
             auto type = obj.load<int>();
-            on_request(type, obj);
+            on_command(type, obj);
         }
         
         auto it = _coroutines.begin();
@@ -77,7 +77,7 @@ void worker::on_exec() {
             if (co->status() == COROUTINE_DEAD) {
                 _coroutines.erase(it++);
 
-                _sche->request(sch_coroutine_stop, cid);
+                inst->request(req_coroutine_stop, cid);
             } else {
                 ++it;
             }
@@ -85,9 +85,9 @@ void worker::on_exec() {
 
         _timer.tick();
 
-        auto co = _sche->pop_coroutine();
+        auto co = inst->pop_coroutine();
         if (co) {
-            _sche->request(sch_coroutine_start, co->id(), _id);
+            inst->request(req_coroutine_start, co->id(), _id);
 
             co->init();
             co->resume();
@@ -98,9 +98,9 @@ void worker::on_exec() {
     }
 }
 
-void worker::on_request(int type, box::object& obj) {
+void worker::on_command(int type, box::object& obj) {
     switch (type) {
-        case exe_resume:
+        case cmd_resume:
             obj.invoke(&worker::on_resume, this);
             break;
     }

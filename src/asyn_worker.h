@@ -11,12 +11,6 @@
 
 namespace asyn {
 
-enum {
-    exe_resume,
-};
-
-class master;
-
 class worker {
 public:
     worker() = default;
@@ -24,16 +18,16 @@ public:
 
     static worker* current();
 
-    void run(int id, master* sche);
+    void run(int id);
     void init_context();
     void join();
     void yield(coroutine* co);
     void on_exec();
-    void on_request(int type, box::object& obj);
+    void on_command(int type, box::object& obj);
     void on_resume(int cid);
 
     template<typename... A>
-    void request(int type, A... args) {
+    void command(int type, A... args) {
         box::object obj;
         obj.store(type);
         obj.store(args...);
@@ -47,7 +41,6 @@ public:
 
 private:
     int _id = 0;
-    master* _sche = nullptr;
     pthread_t _thread = nullptr;
     coroutine* _self = nullptr;
     timer _timer;
@@ -55,6 +48,10 @@ private:
     std::list<std::shared_ptr<coroutine>> _coroutines;
     queue<box::object> _requests;
     std::unordered_map<int, std::shared_ptr<coroutine>> _yield_coroutines;
+};
+
+enum { // command type
+    cmd_resume,
 };
 
 } // asyn

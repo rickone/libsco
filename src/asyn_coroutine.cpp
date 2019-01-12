@@ -91,7 +91,7 @@ void coroutine::join() {
     }
 
     _join_id = self->id();
-    master::inst()->request(sch_join, self->id(), _id);
+    master::inst()->request(req_join, self->id(), _id);
     worker::current()->yield(self);
 }
 

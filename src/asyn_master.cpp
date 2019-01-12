@@ -30,7 +30,7 @@ int master::run(int (*main)(int, char*[]), int argc, char* argv[]) {
     _run_flag = true;
     int i = 0;
     for (auto& obj : _workers) {
-        obj.run(i++, this);
+        obj.run(i++);
     }
 
     on_exec();
@@ -78,55 +78,26 @@ void master::on_exec() {
 
 void master::on_request(int type, box::object& obj) {
     switch (type) {
-        case sch_coroutine_start:
-            obj.invoke(&master::on_coroutine_start, this);
+        case req_coroutine_start:
+            obj.invoke(&monitor::on_coroutine_start, &_monitor);
             break;
-        case sch_coroutine_stop:
-            obj.invoke(&master::on_coroutine_stop, this);
+        case req_coroutine_stop:
+            obj.invoke(&monitor::on_coroutine_stop, &_monitor);
             break;
-        case sch_join:
+        case req_join:
             obj.invoke(&master::on_join, this);
     }
 }
 
-void master::on_coroutine_start(int cid, int wid) {
-    co_status status = {cid, wid};
-    _co_status[cid] = status;
-}
-
-void master::on_coroutine_stop(int cid) {
-    auto status = get_co_status(cid);
-    if (status == nullptr) {
-        return;
-    }
-
-    if (status->join_cid != 0) {
-        auto join_status = get_co_status(status->join_cid);
-        if (join_status) {
-            _workers[join_status->wid].request(exe_resume, status->join_cid);
-        }
-    }
-
-    _co_status.erase(cid);
-}
-
 void master::on_join(int cid, int target_cid) {
-    auto status = get_co_status(target_cid);
+    auto status = _monitor.get_co_status(target_cid);
     if (status == nullptr) {
-        auto join_status = get_co_status(cid);
+        auto join_status = _monitor.get_co_status(cid);
         if (join_status) {
-            _workers[join_status->wid].request(exe_resume, cid);
+            command_worker(join_status->wid, cmd_resume, cid);
         }
         return;
     }
 
     status->join_cid = cid;
-}
-
-co_status* master::get_co_status(int cid) {
-    auto it = _co_status.find(cid);
-    if (it == _co_status.end()) {
-        return nullptr;
-    }
-    return &it->second;
 }

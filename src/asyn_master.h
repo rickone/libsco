@@ -4,20 +4,9 @@
 #include "asyn_coroutine.h"
 #include "asyn_queue.h"
 #include "asyn_worker.h"
+#include "asyn_monitor.h"
 
 namespace asyn {
-
-enum {
-    sch_coroutine_start,
-    sch_coroutine_stop,
-    sch_join,
-};
-
-struct co_status {
-    int cid = 0;
-    int wid = 0;
-    int join_cid = 0;
-};
 
 class master {
 public:
@@ -31,8 +20,6 @@ public:
     std::shared_ptr<coroutine> pop_coroutine();
     void on_exec();
     void on_request(int type, box::object& obj);
-    void on_coroutine_start(int cid, int wid);
-    void on_coroutine_stop(int cid);
     void on_join(int cid, int target_cid);
 
     bool is_running() const { return _run_flag; }
@@ -46,18 +33,25 @@ public:
         _requests.push(std::move(obj));
     }
 
-private:
-    co_status* get_co_status(int cid);
+    template<typename... A>
+    void command_worker(int wid, int type, A... args) {
+        _workers[wid].command(type, args...);
+    }
 
 private:
     int _code = 0;
     volatile bool _run_flag = false;
+    int _next_cid = 0;
     queue<std::shared_ptr<coroutine>> _coroutines;
     worker _workers[4];
     queue<box::object> _requests;
+    monitor _monitor;
+};
 
-    int _next_cid = 0;
-    std::unordered_map<int, co_status> _co_status;
+enum { // request type
+    req_coroutine_start,
+    req_coroutine_stop,
+    req_join,
 };
 
 } // asyn
