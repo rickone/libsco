@@ -7,7 +7,7 @@
 #include "asyn_coroutine.h"
 #include "asyn_timer.h"
 #include "asyn_poller.h"
-#include "asyn_queue.h"
+#include "asyn_lockfree_queue.h"
 
 namespace asyn {
 
@@ -31,7 +31,7 @@ public:
         box::object obj;
         obj.store(type);
         obj.store(args...);
-        _requests.push(std::move(obj));
+        _commands.push(std::move(obj));
     }
 
     coroutine* co_self() { return _self; }
@@ -46,7 +46,7 @@ private:
     timer _timer;
     poller _poller;
     std::list<std::shared_ptr<coroutine>> _coroutines;
-    queue<box::object> _requests;
+    lockfree_queue<box::object> _commands;
     std::unordered_map<int, std::shared_ptr<coroutine>> _yield_coroutines;
 };
 

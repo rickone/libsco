@@ -1,8 +1,6 @@
 #pragma once
 
 #include <unordered_map>
-#include "asyn_coroutine.h"
-#include "asyn_queue.h"
 
 namespace asyn {
 

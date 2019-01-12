@@ -2,7 +2,7 @@
 
 #include <unordered_map>
 #include "asyn_coroutine.h"
-#include "asyn_queue.h"
+#include "asyn_lockfree_queue.h"
 #include "asyn_worker.h"
 #include "asyn_monitor.h"
 
@@ -42,9 +42,9 @@ private:
     int _code = 0;
     volatile bool _run_flag = false;
     int _next_cid = 0;
-    queue<std::shared_ptr<coroutine>> _coroutines;
+    lockfree_queue<std::shared_ptr<coroutine>> _coroutines;
     worker _workers[4];
-    queue<box::object> _requests;
+    lockfree_queue<box::object> _requests;
     monitor _monitor;
 };
 

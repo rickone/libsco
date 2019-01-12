@@ -61,7 +61,7 @@ void worker::on_exec() {
         //auto tp_begin = std::chrono::steady_clock::now();
         while (true) {
             box::object obj;
-            if (!_requests.pop(obj)) {
+            if (!_commands.pop(obj)) {
                 break;
             }
 

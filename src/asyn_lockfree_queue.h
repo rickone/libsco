@@ -1,12 +1,11 @@
 #pragma once
 
 #include <atomic>
-#include <string>
 
 namespace asyn {
 
 template<typename T>
-class queue {
+class lockfree_queue {
 public:
     struct node_t {
         node_t() = default;
@@ -17,13 +16,13 @@ public:
         T value;
     };
 
-    queue() {
+    lockfree_queue() {
         auto dummy = new node_t();
         _head = dummy;
         _tail = dummy;
     }
 
-    virtual ~queue() {
+    virtual ~lockfree_queue() {
         // lock?
         for (auto node = _head.load(); node != nullptr; ) {
             auto next = node->next;
