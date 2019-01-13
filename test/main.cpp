@@ -13,7 +13,8 @@ void foo(int start, int n) {
         fprintf(stdout, "%04d\n", start + i);
         fflush(stdout);
         
-        std::this_thread::sleep_for(10ms);
+        //std::this_thread::sleep_for(10ms);
+        asyn::sleep_for(10ms);
     }
 }
 

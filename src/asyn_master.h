@@ -17,10 +17,10 @@ public:
     
     void enter();
     void quit(int code = 0);
-    void body();
+    void main();
     int start_coroutine(const coroutine::func_t& func);
     std::shared_ptr<coroutine> pop_coroutine();
-    void on_exec();
+    void on_thread();
     void on_request(int type, box::object& obj);
     void on_join(int cid, int target_cid);
 
@@ -44,7 +44,7 @@ private:
     std::atomic<bool> _run_flag;
     int _next_cid = 0;
     lockfree_queue<std::shared_ptr<coroutine>> _coroutines;
-    worker _workers[4];
+    worker _workers[5];
     lockfree_queue<box::object> _requests;
     monitor _monitor;
     coroutine _master_co;

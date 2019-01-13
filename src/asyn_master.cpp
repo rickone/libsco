@@ -3,8 +3,6 @@
 #include <time.h>
 #include "asyn_override.h"
 
-ASYN_ORIGIN_DEF(nanosleep);
-
 using namespace asyn;
 
 static void on_quit(int sig) {
@@ -22,7 +20,7 @@ void master::enter() {
     main_co->init();
     _coroutines.push(main_co);
 
-    _master_co.init(std::bind(&master::body, this));
+    _master_co.init(std::bind(&master::main, this));
     main_co->swap(&_master_co);
 }
 
@@ -32,22 +30,21 @@ void master::quit(int code) {
     coroutine::self()->yield_return();
 }
 
-void master::body() {
+void master::main() {
     signal(SIGINT, on_quit); // ctrl + c
     signal(SIGTERM, on_quit); // kill
     signal(SIGQUIT, on_quit); // ctrl + '\'
     signal(SIGCHLD, SIG_IGN);
 
     _run_flag.store(true, std::memory_order_release);
-    int i = 0;
-    for (auto& w : _workers) {
-        w.run(i++);
+    for (int i = 1; i < 5; ++i) {
+        _workers[i].run(i);
     }
 
-    on_exec();
+    on_thread();
 
-    for (auto& w : _workers) {
-        w.join();
+    for (int i = 1; i < 5; ++i) {
+        _workers[i].join();
     }
     _exit(_code);
 }
@@ -65,8 +62,10 @@ std::shared_ptr<coroutine> master::pop_coroutine() {
     return co;
 }
 
-void master::on_exec() {
-    while (_run_flag) {
+void master::on_thread() {
+    _workers[0].init_thread(&_master_co);
+
+    while (is_running()) {
         bool idle = true;
         while (true) {
             box::object obj;
@@ -79,12 +78,7 @@ void master::on_exec() {
             on_request(type, obj);
         }
 
-        if (idle) {
-            struct timespec req;
-            req.tv_sec = 0;
-            req.tv_nsec = 10'000'000;
-            ASYN_ORIGIN(nanosleep)(&req, nullptr);
-        }
+        _workers[0].on_step();
     }
 }
 
@@ -116,7 +110,7 @@ void master::on_join(int cid, int target_cid) {
 
 void asyn::join(int cid) {
     auto self = coroutine::self();
-    if (self->id() == cid) {
+    if (self == nullptr || self->id() == cid) {
         return;
     }
 

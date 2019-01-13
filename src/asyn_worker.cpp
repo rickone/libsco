@@ -1,12 +1,9 @@
 #include "asyn_worker.h"
 #include "asyn_master.h"
 #include "asyn_coroutine.h"
+#include "asyn_dlfunc.h"
 #include "asyn_timer.h"
 #include "asyn_poller.h"
-#include "asyn_override.h"
-
-ASYN_ORIGIN_DEF(pthread_create);
-ASYN_ORIGIN_DEF(pthread_join);
 
 using namespace asyn;
 using namespace std::chrono_literals;
@@ -20,7 +17,7 @@ static void make_context_key() {
 
 static void* start_routine(void* arg) {
     auto inst = (worker*)arg;
-    inst->on_exec();
+    inst->on_thread();
     return nullptr;
 }
 
@@ -29,17 +26,21 @@ worker* worker::current() {
 }
 
 void worker::run(int id) {
-    _id = id;
-    ASYN_ORIGIN(pthread_create)(&_thread, nullptr, start_routine, this);
+    static dlfunc s_dlfunc("pthread", "pthread_create");
+    s_dlfunc(pthread_create)(&_thread, nullptr, start_routine, this);
 }
 
-void worker::init_context() {
+void worker::init_thread(coroutine* self) {
     pthread_once(&s_context_once, make_context_key);
     pthread_setspecific(s_context_key, this);
+
+    _self = self;
+    _poller.init();
 }
 
 void worker::join() {
-    ASYN_ORIGIN(pthread_join)(_thread, nullptr);
+    static dlfunc s_dlfunc("pthread", "pthread_join");
+    s_dlfunc(pthread_join)(_thread, nullptr);
 }
 
 void worker::yield(coroutine* co) {
@@ -47,60 +48,61 @@ void worker::yield(coroutine* co) {
     co->yield();
 }
 
-void worker::on_exec() {
-    init_context();
-
+void worker::on_thread() {
     coroutine co;
     co.init();
-    _self = &co;
+    init_thread(&co);
+
+    master* ma = master::inst();
+    while (ma->is_running()) {
+        on_step();
+    }
+}
+
+void worker::on_step() {
+    auto ma = master::inst();
+    //auto tp_begin = std::chrono::steady_clock::now();
+    while (true) {
+        box::object obj;
+        if (!_commands.pop(obj)) {
+            break;
+        }
+
+        auto type = obj.load<int>();
+        on_command(type, obj);
+    }
     
-    _poller.init();
+    auto it = _coroutines.begin();
+    auto it_end = _coroutines.end();
+    while (it != it_end) {
+        auto& co = *it;
+        int cid = co->id();
+        if (co->status() == COROUTINE_DEAD) {
+            _coroutines.erase(it++);
 
-    master* inst = master::inst();
-    while (inst->is_running()) {
-        //auto tp_begin = std::chrono::steady_clock::now();
-        while (true) {
-            box::object obj;
-            if (!_commands.pop(obj)) {
-                break;
-            }
+            ma->request(req_coroutine_stop, cid);
+        } else {
+            ++it;
+        }
+    }
 
-            auto type = obj.load<int>();
-            on_command(type, obj);
+    _timer.tick();
+
+    auto co = ma->pop_coroutine();
+    if (co) {
+        ma->request(req_coroutine_start, co->id(), _id);
+
+        co->init();
+        try {
+            co->resume();    
+        } catch (std::exception& err) {
+            fprintf(stderr, "Error: %s\n", err.what());
         }
         
-        auto it = _coroutines.begin();
-        auto it_end = _coroutines.end();
-        while (it != it_end) {
-            auto& co = *it;
-            int cid = co->id();
-            if (co->status() == COROUTINE_DEAD) {
-                _coroutines.erase(it++);
-
-                inst->request(req_coroutine_stop, cid);
-            } else {
-                ++it;
-            }
-        }
-
-        _timer.tick();
-
-        auto co = inst->pop_coroutine();
-        if (co) {
-            inst->request(req_coroutine_start, co->id(), _id);
-
-            co->init();
-            try {
-                co->resume();    
-            } catch (std::exception& err) {
-                fprintf(stderr, "Error: %s\n", err.what());
-            }
-            
-            _coroutines.push_back(co);
-        }
-
-        _poller.wait(10'000'000);
+        _coroutines.push_back(co);
     }
+
+    _poller.wait(10'000'000);
 }
 
 void worker::on_command(int type, box::object& obj) {

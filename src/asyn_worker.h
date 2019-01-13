@@ -19,10 +19,11 @@ public:
     static worker* current();
 
     void run(int id);
-    void init_context();
+    void init_thread(coroutine* self);
     void join();
     void yield(coroutine* co);
-    void on_exec();
+    void on_thread();
+    void on_step();
     void on_command(int type, box::object& obj);
     void on_resume(int cid);
 
