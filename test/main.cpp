@@ -13,27 +13,25 @@ void foo(int start, int n) {
         fprintf(stdout, "%04d\n", start + i);
         fflush(stdout);
         
-        //std::this_thread::sleep_for(10ms);
-        asyn::sleep_for(10ms);
+        std::this_thread::sleep_for(10ms);
+        //asyn::sleep_for(10ms);
     }
 }
 
 int main() {
     asyn::guard ag;
-    //asyn::master::inst()->enter();
 
     puts("Hello World!");
 
-    std::vector<int> cos;
+    std::vector<std::thread> threads;
     for (int i = 0; i < 10; ++i) {
-        cos.push_back(asyn::master::inst()->start_coroutine(std::bind(foo, i * 2, 2)));
+        threads.emplace_back(foo, i * 2, 2);
     }
 
-    for (int cid : cos) {
-        asyn::join(cid);
+    for (auto& t : threads) {
+        t.join();
     }
 
-    //asyn::master::inst()->quit(0);
     return 0;
 }
 
@@ -46,7 +44,7 @@ bool is_prime(int x) {
     return true;
 }
 
-int asyn_main2() {
+int main2() {
     // call function asynchronously:
     std::future<bool> fut = std::async(is_prime, 444444443); 
 

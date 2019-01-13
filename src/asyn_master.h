@@ -24,7 +24,7 @@ public:
     void on_request(int type, box::object& obj);
     void on_join(int cid, int target_cid);
 
-    bool is_running() const { return _run_flag.load(std::memory_order_acquire); }
+    bool is_startup() const { return _startup; }
 
     template<typename... A>
     void request(int type, A... args) {
@@ -41,7 +41,7 @@ public:
 
 private:
     int _code = 0;
-    std::atomic<bool> _run_flag;
+    volatile bool _startup = false;
     int _next_cid = 0;
     lockfree_queue<std::shared_ptr<coroutine>> _coroutines;
     worker _workers[5];

@@ -34,7 +34,7 @@ Rpath = ./
 endif
 
 ifeq ($(suffix $(Target)),)
-Link = g++ -Wl,-rpath,$(Rpath) $(LibDir:%=-L%) -o $@ $^ $(Lib:%=-l%) $(LDFLAGS)
+Link = g++ -Wl,-rpath,$(Rpath) $(LibDir:%=-L%) $(Lib:%=-l%) $(LDFLAGS) -o $@ $^
 endif
 
 ifeq ($(suffix $(Target)),.so)
@@ -44,7 +44,7 @@ ifeq ($(UnixName),Darwin)
 Shared = -dynamiclib -install_name @rpath/$(Target)
 endif
 CFLAGS += -fPIC
-Link = g++ $(Shared) $(LibDir:%=-L%) -o $@ $^ $(Lib:%=-l%) $(LDFLAGS)
+Link = g++ $(Shared) $(LibDir:%=-L%) $(Lib:%=-l%) $(LDFLAGS) -o $@ $^
 
 endif
 
@@ -86,7 +86,7 @@ start:
 $(TargetPath): $(Obj:%=$(ObjDirPath)/%)
 	$(AfterCompile)
 	@echo Link $@ ...
-	@$(Link)
+	$(Link)
 	$(AfterBuild)
 
 -include $(Dep:%=$(ObjDirPath)/%)

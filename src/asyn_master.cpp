@@ -1,7 +1,5 @@
 #include "asyn_master.h"
 #include <signal.h>
-#include <time.h>
-#include "asyn_override.h"
 
 using namespace asyn;
 
@@ -26,7 +24,7 @@ void master::enter() {
 
 void master::quit(int code) {
     _code = code;
-    _run_flag.store(false, std::memory_order_release);
+    _startup = false;
     coroutine::self()->yield_return();
 }
 
@@ -36,7 +34,7 @@ void master::main() {
     signal(SIGQUIT, on_quit); // ctrl + '\'
     signal(SIGCHLD, SIG_IGN);
 
-    _run_flag.store(true, std::memory_order_release);
+    _startup = true;
     for (int i = 1; i < 5; ++i) {
         _workers[i].run(i);
     }
@@ -65,7 +63,7 @@ std::shared_ptr<coroutine> master::pop_coroutine() {
 void master::on_thread() {
     _workers[0].init_thread(&_master_co);
 
-    while (is_running()) {
+    while (is_startup()) {
         bool idle = true;
         while (true) {
             box::object obj;

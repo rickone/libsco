@@ -9,7 +9,7 @@ using namespace asyn;
 using namespace std::chrono_literals;
 
 static pthread_key_t s_context_key;
-static pthread_once_t s_context_once;
+static pthread_once_t s_context_once = PTHREAD_ONCE_INIT;
 
 static void make_context_key() {
     pthread_key_create(&s_context_key, nullptr);
@@ -22,20 +22,21 @@ static void* start_routine(void* arg) {
 }
 
 worker* worker::current() {
+    pthread_once(&s_context_once, make_context_key);
     return (worker*)pthread_getspecific(s_context_key);
 }
 
 void worker::run(int id) {
     static dlfunc s_dlfunc("pthread", "pthread_create");
+    _id = id;
     s_dlfunc(pthread_create)(&_thread, nullptr, start_routine, this);
 }
 
 void worker::init_thread(coroutine* self) {
-    pthread_once(&s_context_once, make_context_key);
-    pthread_setspecific(s_context_key, this);
-
     _self = self;
     _poller.init();
+    pthread_once(&s_context_once, make_context_key);
+    pthread_setspecific(s_context_key, this);
 }
 
 void worker::join() {
@@ -54,7 +55,7 @@ void worker::on_thread() {
     init_thread(&co);
 
     master* ma = master::inst();
-    while (ma->is_running()) {
+    while (ma->is_startup()) {
         on_step();
     }
 }
