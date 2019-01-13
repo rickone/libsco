@@ -1,9 +1,10 @@
-#include "cstdio"
-#include "asyn_master.h"
-#include "asyn_timer.h"
+#include <cstdio>
 #include <thread>
 #include <vector>
 #include <chrono>
+#include <future>
+#include <iostream>
+#include "asyn_master.h"
 
 using namespace std::chrono_literals;
 
@@ -12,25 +13,49 @@ void foo(int start, int n) {
         fprintf(stdout, "%04d\n", start + i);
         fflush(stdout);
         
-        asyn::sleep_for(10ms);
+        std::this_thread::sleep_for(10ms);
     }
 }
 
-int asyn_main(int argc, char* argv[]) {
+int main() {
+    asyn::guard ag;
+    //asyn::master::inst()->enter();
+
     puts("Hello World!");
 
-    std::vector<std::shared_ptr<asyn::coroutine>> coroutines;
+    std::vector<int> cos;
     for (int i = 0; i < 10; ++i) {
-        coroutines.push_back(asyn::master::inst()->start_coroutine(std::bind(foo, i * 2, 2)));
+        cos.push_back(asyn::master::inst()->start_coroutine(std::bind(foo, i * 2, 2)));
     }
 
-    for (auto& co : coroutines) {
-        co->join();
+    for (int cid : cos) {
+        asyn::join(cid);
     }
 
+    //asyn::master::inst()->quit(0);
     return 0;
 }
 
-int main(int argc, char* argv[]) {
-    return asyn::master::inst()->run(asyn_main, argc, argv);
+bool is_prime(int x) {
+    for (int i = 2; i < x; ++i) {
+        if (x % i == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+int asyn_main2() {
+    // call function asynchronously:
+    std::future<bool> fut = std::async(is_prime, 444444443); 
+
+    // do something while waiting for function to set future:
+    std::cout << "checking, please wait";
+    /*while (fut.wait_for(100ms) == std::future_status::timeout) {
+        std::cout << '.';
+    }*/
+    fut.wait();
+
+    std::cout << "\n444444443 " << (fut.get() ? "is" : "is not") << " prime.\n";
+    return 0;
 }

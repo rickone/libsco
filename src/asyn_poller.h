@@ -16,7 +16,7 @@ enum {
 class poller {
 public:
     poller() = default;
-    virtual ~poller();
+    ~poller();
 
     void init();
     void add(int fd, int event_flag, coroutine* co);

@@ -13,7 +13,7 @@ struct co_status {
 class monitor {
 public:
     monitor() = default;
-    virtual ~monitor() = default;
+    ~monitor() = default;
 
     co_status* get_co_status(int cid);
     void on_coroutine_start(int cid, int wid);

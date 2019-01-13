@@ -16,35 +16,47 @@ master* master::inst() {
     return &s_inst;
 }
 
-int master::run(int (*main)(int, char*[]), int argc, char* argv[]) {
+void master::enter() {
+    int cid = ++_next_cid;
+    auto main_co = std::make_shared<coroutine>(cid, nullptr);
+    main_co->init();
+    _coroutines.push(main_co);
+
+    _master_co.init(std::bind(&master::body, this));
+    main_co->swap(&_master_co);
+}
+
+void master::quit(int code) {
+    _code = code;
+    _run_flag.store(false, std::memory_order_release);
+    coroutine::self()->yield_return();
+}
+
+void master::body() {
     signal(SIGINT, on_quit); // ctrl + c
     signal(SIGTERM, on_quit); // kill
     signal(SIGQUIT, on_quit); // ctrl + '\'
     signal(SIGCHLD, SIG_IGN);
 
-    start_coroutine([this, main, argc, argv](){
-        int ret = main(argc, argv);
-        quit(ret);
-    });
-
-    _run_flag = true;
+    _run_flag.store(true, std::memory_order_release);
     int i = 0;
-    for (auto& obj : _workers) {
-        obj.run(i++);
+    for (auto& w : _workers) {
+        w.run(i++);
     }
 
     on_exec();
 
-    for (auto& obj : _workers) {
-        obj.join();
+    for (auto& w : _workers) {
+        w.join();
     }
-    return _code;
+    _exit(_code);
 }
 
-std::shared_ptr<coroutine> master::start_coroutine(const coroutine::func_t& func) {
-    auto co = std::make_shared<coroutine>(++_next_cid, func);
+int master::start_coroutine(const coroutine::func_t& func) {
+    int cid = ++_next_cid;
+    auto co = std::make_shared<coroutine>(cid, func);
     _coroutines.push(co);
-    return co;
+    return cid;
 }
 
 std::shared_ptr<coroutine> master::pop_coroutine() {
@@ -100,4 +112,14 @@ void master::on_join(int cid, int target_cid) {
     }
 
     status->join_cid = cid;
+}
+
+void asyn::join(int cid) {
+    auto self = coroutine::self();
+    if (self->id() == cid) {
+        return;
+    }
+
+    master::inst()->request(req_join, self->id(), cid);
+    worker::current()->yield(self);
 }

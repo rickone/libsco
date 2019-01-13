@@ -14,3 +14,10 @@ extern "C" uintptr_t start(const struct macho_header* appsMachHeader, int argc, 
     puts("start hooked");
     return ASYN_ORIGIN(start)(appsMachHeader, argc, argv, slide, dyldsMachHeader, startGlue);
 }
+
+int main();
+ASYN_OVERRIDE(main)
+int main() {
+    puts("main hooked");
+    return ASYN_ORIGIN(main)();
+}

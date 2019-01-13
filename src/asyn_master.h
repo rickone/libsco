@@ -11,19 +11,20 @@ namespace asyn {
 class master {
 public:
     master() = default;
-    virtual ~master() = default;
+    ~master() = default;
 
     static master* inst();
     
-    int run(int (*main)(int, char*[]), int argc, char* argv[]);
-    std::shared_ptr<coroutine> start_coroutine(const coroutine::func_t& func);
+    void enter();
+    void quit(int code = 0);
+    void body();
+    int start_coroutine(const coroutine::func_t& func);
     std::shared_ptr<coroutine> pop_coroutine();
     void on_exec();
     void on_request(int type, box::object& obj);
     void on_join(int cid, int target_cid);
 
-    bool is_running() const { return _run_flag; }
-    void quit(int code) { _code = code; _run_flag = false; }
+    bool is_running() const { return _run_flag.load(std::memory_order_acquire); }
 
     template<typename... A>
     void request(int type, A... args) {
@@ -40,12 +41,13 @@ public:
 
 private:
     int _code = 0;
-    volatile bool _run_flag = false;
+    std::atomic<bool> _run_flag;
     int _next_cid = 0;
     lockfree_queue<std::shared_ptr<coroutine>> _coroutines;
     worker _workers[4];
     lockfree_queue<box::object> _requests;
     monitor _monitor;
+    coroutine _master_co;
 };
 
 enum { // request type
@@ -53,5 +55,17 @@ enum { // request type
     req_coroutine_stop,
     req_join,
 };
+
+class guard {
+public:
+    guard() {
+        master::inst()->enter();
+    }
+    ~guard() {
+        master::inst()->quit();
+    }
+};
+
+void join(int cid);
 
 } // asyn

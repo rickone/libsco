@@ -19,7 +19,7 @@ public:
             }
         }
 
-        virtual ~node_t() = default;
+        ~node_t() = default;
 
         static node_t* create(const K& key) {
             return new node_t(key);
@@ -72,7 +72,7 @@ public:
         _header_node = node_t::create(K());
     }
 
-    virtual ~skiplist() {
+    ~skiplist() {
         node_t* node = _header_node;
         while (node) {
             node_t* next = node->forward(0);

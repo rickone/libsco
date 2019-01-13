@@ -11,7 +11,7 @@ public:
 	using time_point = std::chrono::steady_clock::time_point;
 
     timer() = default;
-    virtual ~timer() = default;
+    ~timer() = default;
 
     void sleep(int64_t ns, coroutine* co);
     void tick();

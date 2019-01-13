@@ -14,7 +14,7 @@ namespace asyn {
 class worker {
 public:
     worker() = default;
-    virtual ~worker() = default;
+    ~worker() = default;
 
     static worker* current();
 

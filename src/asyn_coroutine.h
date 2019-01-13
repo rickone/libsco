@@ -24,16 +24,16 @@ public:
     coroutine(int id, const func_t& func);
     coroutine(const coroutine& other) = delete;
     coroutine(coroutine&& other) = delete;
-    virtual ~coroutine();
+    ~coroutine();
 
     static coroutine* self();
 
     void init(const func_t& func = nullptr, size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
     void set_self();
+    void swap(coroutine* co);
     bool resume();
     void yield();
-    void join();
-    void detach();
+    void yield_return();
 
     box::object get_value() { return std::move(_val); }
 
@@ -58,8 +58,6 @@ private:
     ucontext_t _ctx;
     int _status = COROUTINE_UNINIT;
     box::object _val;
-    int _join_id = 0;
-    bool _detach = false;
 };
 
 template<typename R, typename... A>
@@ -109,6 +107,16 @@ inline std::shared_ptr<coroutine> create_coroutine(void (*func)(A...), size_t st
 }
 
 template<typename... A>
+inline box::object resume(const std::shared_ptr<coroutine>& co, A... args) {
+    if (co->status() != COROUTINE_SUSPEND)
+        return box::object();
+
+    co->set_value(args...);
+    co->resume();
+    return co->get_value();
+}
+
+template<typename... A>
 inline box::object yield(A... args) {
     auto self = coroutine::self();
     self->set_value(args...);
@@ -117,13 +125,10 @@ inline box::object yield(A... args) {
 }
 
 template<typename... A>
-inline box::object resume(const std::shared_ptr<coroutine>& co, A... args) {
-    if (co->status() != COROUTINE_SUSPEND)
-        return box::object();
-
-    co->set_value(args...);
-    co->resume();
-    return co->get_value();
+inline void yield_return(A... args) {
+    auto self = coroutine::self();
+    self->set_value(args...);
+    self->yield_return();
 }
 
 } // asyn

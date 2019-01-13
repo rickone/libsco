@@ -28,7 +28,9 @@ void coroutine::body(coroutine* co) {
 }
 
 void coroutine::init(const func_t& func, size_t stack_len) {
-    assert(_status == COROUTINE_UNINIT);
+    if (_status != COROUTINE_UNINIT) {
+        return;
+    }
 
     if (func) {
         _func = func;
@@ -53,48 +55,43 @@ void coroutine::set_self() {
     worker::current()->set_co_self(this);
 }
 
+void coroutine::swap(coroutine* co) {
+    _status = COROUTINE_SUSPEND;
+    co->_status = COROUTINE_RUNNING;
+    swapcontext(&_ctx, &co->_ctx);
+}
+
 bool coroutine::resume() {
     if (_status != COROUTINE_SUSPEND) {
         return false;
     }
 
-    _status = COROUTINE_RUNNING;
-
     auto self = coroutine::self();
+    if (self == nullptr) {
+        return false; // panic
+    }
+
     _ctx.uc_link = &self->_ctx;
-
     set_self();
-    swapcontext(&self->_ctx, &_ctx);
+    self->swap(this);
     self->set_self();
-
     return true;
 }
 
 void coroutine::yield() {
-    _status = COROUTINE_SUSPEND;
+    if (_ctx.uc_link == nullptr) {
+        return; // panic
+    }
 
+    _status = COROUTINE_SUSPEND;
     swapcontext(&_ctx, _ctx.uc_link);
 }
 
-void coroutine::join() {
-    if (_detach) {
-        return;
+void coroutine::yield_return() {
+    if (_ctx.uc_link == nullptr) {
+        return; // panic
     }
 
-    auto self = coroutine::self();
-    if (this == self) {
-        return;
-    }
-
-    if (_join_id > 0) {
-        return;
-    }
-
-    _join_id = self->id();
-    master::inst()->request(req_join, self->id(), _id);
-    worker::current()->yield(self);
-}
-
-void coroutine::detach() {
-    _detach = true;
+    _status = COROUTINE_DEAD;
+    swapcontext(&_ctx, _ctx.uc_link);
 }

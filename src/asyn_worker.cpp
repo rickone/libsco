@@ -90,7 +90,12 @@ void worker::on_exec() {
             inst->request(req_coroutine_start, co->id(), _id);
 
             co->init();
-            co->resume();
+            try {
+                co->resume();    
+            } catch (std::exception& err) {
+                fprintf(stderr, "Error: %s\n", err.what());
+            }
+            
             _coroutines.push_back(co);
         }
 

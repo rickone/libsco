@@ -22,7 +22,7 @@ public:
         _tail = dummy;
     }
 
-    virtual ~lockfree_queue() {
+    ~lockfree_queue() {
         // lock?
         for (auto node = _head.load(); node != nullptr; ) {
             auto next = node->next;
