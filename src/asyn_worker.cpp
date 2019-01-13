@@ -103,7 +103,7 @@ void worker::on_step() {
         _coroutines.push_back(co);
     }
 
-    _poller.wait(10'000'000);
+    _poller.poll(10'000'000);
 }
 
 void worker::on_command(int type, box::object& obj) {

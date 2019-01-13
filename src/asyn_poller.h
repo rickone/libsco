@@ -7,10 +7,10 @@ namespace asyn {
 const static int MAX_SELECT_COUNT = 1024;
 
 enum {
-    SELECT_NONE,
-    SELECT_READ,
-    SELECT_WRITE,
-    SELECT_READ_WRITE,
+    EVENT_NONE,
+    EVENT_READ,
+    EVENT_WRITE,
+    EVENT_READ_WRITE,
 };
 
 class poller {
@@ -22,7 +22,8 @@ public:
     void add(int fd, int event_flag, coroutine* co);
     void set(int fd, int event_flag, coroutine* co);
     void remove(int fd);
-    void wait(int64_t ns);
+    void poll(int64_t ns);
+    void wait(int fd, int event_flag);
 
 private:
     int _fd = -1;

@@ -8,7 +8,7 @@ OutDir  = ../bin
 Define  = _XOPEN_SOURCE
 CFLAGS  =
 CXXFLAGS =
-LDFLAGS =
+LDFLAGS = -force_flat_namespace
 Rpath = ../lib
 
 include ../utils/makefile

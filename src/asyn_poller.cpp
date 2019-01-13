@@ -1,6 +1,7 @@
 #include "asyn_poller.h"
 #include <unistd.h>
 #include <cerrno>
+#include "asyn_worker.h"
 
 using namespace asyn;
 
@@ -22,11 +23,11 @@ void poller::add(int fd, int event_flag, coroutine* co) {
     event.events = EPOLLET;
     event.data.ptr = co;
 
-    if (event_flag & SELECT_READ) {
+    if (event_flag & EVENT_READ) {
         event.events |= EPOLLIN;
     }
 
-    if (event_flag & SELECT_WRITE) {
+    if (event_flag & EVENT_WRITE) {
         event.events |= EPOLLOUT;
     }
 
@@ -38,11 +39,11 @@ void poller::set(int fd, int event_flag, coroutine* co) {
     event.events = EPOLLET;
     event.data.ptr = socket;
 
-    if (event_flag & SELECT_READ) {
+    if (event_flag & EVENT_READ) {
         event.events |= EPOLLIN;
     }
 
-    if (event_flag & SELECT_WRITE) {
+    if (event_flag & EVENT_WRITE) {
         event.events |= EPOLLOUT;
     }
 
@@ -53,7 +54,7 @@ void poller::remove(int fd) {
     epoll_ctl(_fd, EPOLL_CTL_DEL, fd, nullptr);
 }
 
-void poller::wait(int64_t ns) {
+void poller::poll(int64_t ns) {
     static struct epoll_event events[MAX_SELECT_COUNT];
     
     int event_cnt = epoll_wait(_fd, events, MAX_SELECT_COUNT, (int)(ns / 1'000'000));
@@ -69,10 +70,10 @@ void poller::wait(int64_t ns) {
         unsigned es = events[i].events;
         int event_type = 0;
         if (es & EPOLLIN) {
-            event_type |= SELECT_READ;
+            event_type |= EVENT_READ;
         }
         if (es & EPOLLOUT) {
-            event_type |= SELECT_WRITE;
+            event_type |= EVENT_WRITE;
         }
         auto co = (coroutine*)events[i].data.ptr;
         co->set_value(event_type);
@@ -96,14 +97,14 @@ void poller::init() {
 
 void poller::add(int fd, int event_flag, coroutine* co) {
     struct kevent events[2];
-    EV_SET(&events[0], fd, EVFILT_READ,  EV_ADD | ((event_flag & SELECT_READ) ? EV_ENABLE : EV_DISABLE), 0, 0, co);
-    EV_SET(&events[1], fd, EVFILT_WRITE, EV_ADD | ((event_flag & SELECT_WRITE) ? EV_ENABLE : EV_DISABLE), 0, 0, co);
+    EV_SET(&events[0], fd, EVFILT_READ,  EV_ADD | ((event_flag & EVENT_READ) ? EV_ENABLE : EV_DISABLE), 0, 0, co);
+    EV_SET(&events[1], fd, EVFILT_WRITE, EV_ADD | ((event_flag & EVENT_WRITE) ? EV_ENABLE : EV_DISABLE), 0, 0, co);
 
     kevent(_fd, &events[0], 2, nullptr, 0, nullptr);
 }
 
 void poller::set(int fd, int event_flag, coroutine* co) {
-    if (event_flag == SELECT_NONE) {
+    if (event_flag == EVENT_NONE) {
         remove(fd);
     } else {
         add(fd, event_flag, co);
@@ -118,7 +119,7 @@ void poller::remove(int fd) {
     kevent(_fd, &events[0], 2, nullptr, 0, nullptr);
 }
 
-void poller::wait(int64_t ns) {
+void poller::poll(int64_t ns) {
     static struct kevent events[MAX_SELECT_COUNT];
 
     struct timespec ts;
@@ -138,9 +139,9 @@ void poller::wait(int64_t ns) {
         unsigned filt = events[i].filter;
         int event_type = 0;
         if (filt == EVFILT_READ) {
-            event_type = SELECT_READ;
+            event_type = EVENT_READ;
         } else if (filt == EVFILT_WRITE) {
-            event_type = SELECT_WRITE;
+            event_type = EVENT_WRITE;
         }
 
         auto co = (coroutine*)events[i].udata;
@@ -150,3 +151,19 @@ void poller::wait(int64_t ns) {
 }
 
 #endif // __APPLE__
+
+void poller::wait(int fd, int event_flag) {
+    auto w = worker::current();
+    if (!w) { // panic
+        return;
+    }
+
+    auto co = w->co_self();
+    if (!co) { // panic
+        return;
+    }
+
+    add(fd, event_flag, co);
+    co->yield();
+    remove(fd);
+}

@@ -1,4 +1,5 @@
 #include "asyn_master.h"
+#include <unistd.h>
 #include <signal.h>
 
 using namespace asyn;

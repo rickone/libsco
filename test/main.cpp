@@ -23,13 +23,13 @@ int main() {
 
     puts("Hello World!");
 
-    std::vector<std::thread> threads;
+    std::vector<int> cos;
     for (int i = 0; i < 10; ++i) {
-        threads.emplace_back(foo, i * 2, 2);
+        cos.push_back(asyn::start(std::bind(foo, i * 2, 2)));
     }
 
-    for (auto& t : threads) {
-        t.join();
+    for (int cid : cos) {
+        asyn::join(cid);
     }
 
     return 0;

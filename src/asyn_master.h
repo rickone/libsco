@@ -66,6 +66,10 @@ public:
     }
 };
 
+inline int start(const coroutine::func_t& func) {
+    return master::inst()->start_coroutine(func);
+}
+
 void join(int cid);
 
 } // asyn
