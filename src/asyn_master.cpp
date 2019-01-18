@@ -36,15 +36,16 @@ void master::main() {
     signal(SIGCHLD, SIG_IGN);
 
     _startup = true;
-    for (int i = 1; i < 5; ++i) {
+    for (int i = 1; i < 5; i++) {
         _workers[i].run(i);
     }
 
     on_thread();
 
-    for (int i = 1; i < 5; ++i) {
+    for (int i = 1; i < 5; i++) {
         _workers[i].join();
     }
+
     _exit(_code);
 }
 

@@ -321,6 +321,7 @@ ssize_t write(int fd, const void* data, size_t len) {
         return -1;
     }
 
+    puts("my write");
     w->poller_inst()->wait(fd, EVENT_WRITE);
     return sys_org(write)(fd, data, len);
 }

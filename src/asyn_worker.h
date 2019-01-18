@@ -35,6 +35,7 @@ public:
         _commands.push(std::move(obj));
     }
 
+    int id() const { return _id; }
     coroutine* co_self() { return _self; }
     void set_co_self(coroutine* self) { _self = self; }
     timer* timer_inst() { return &_timer; }

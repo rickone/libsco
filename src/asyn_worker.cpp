@@ -15,7 +15,7 @@ static void make_context_key() {
     pthread_key_create(&s_context_key, nullptr);
 }
 
-static void* start_routine(void* arg) {
+static void* work_routine(void* arg) {
     auto inst = (worker*)arg;
     inst->on_thread();
     return nullptr;
@@ -27,9 +27,8 @@ worker* worker::current() {
 }
 
 void worker::run(int id) {
-    static dlfunc s_dlfunc("pthread", "pthread_create");
     _id = id;
-    s_dlfunc(pthread_create)(&_thread, nullptr, start_routine, this);
+    pthread_create(&_thread, nullptr, work_routine, this);
 }
 
 void worker::init_thread(coroutine* self) {
@@ -40,8 +39,7 @@ void worker::init_thread(coroutine* self) {
 }
 
 void worker::join() {
-    static dlfunc s_dlfunc("pthread", "pthread_join");
-    s_dlfunc(pthread_join)(_thread, nullptr);
+    pthread_join(_thread, nullptr);
 }
 
 void worker::yield(coroutine* co) {

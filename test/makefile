@@ -12,3 +12,15 @@ LDFLAGS = -force_flat_namespace
 Rpath = ../lib
 
 include ../utils/makefile
+
+Targets = $(basename $(Source))
+TargetBins = $(Targets:%=$(OutDir)/%)
+
+.PHONY: test
+test: start $(TargetBins)
+
+$(OutDir)/%: $(ObjDirPath)/%.o
+	$(AfterCompile)
+	@echo Link $@ ...
+	@$(Link)
+	$(AfterBuild)

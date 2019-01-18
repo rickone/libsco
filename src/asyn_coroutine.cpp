@@ -16,7 +16,11 @@ coroutine::~coroutine() {
 }
 
 coroutine* coroutine::self() {
-    return worker::current()->co_self();
+    auto w = worker::current();
+    if (!w) {
+        return nullptr;
+    }
+    return w->co_self();
 }
 
 void coroutine::body(coroutine* co) {
@@ -52,7 +56,10 @@ void coroutine::init(const func_t& func, size_t stack_len) {
 }
 
 void coroutine::set_self() {
-    worker::current()->set_co_self(this);
+    auto w = worker::current();
+    if (w) {
+        w->set_co_self(this);
+    }
 }
 
 void coroutine::swap(coroutine* co) {

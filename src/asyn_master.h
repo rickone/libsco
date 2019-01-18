@@ -1,6 +1,6 @@
 #pragma once
 
-#include <unordered_map>
+#include <atomic>
 #include "asyn_coroutine.h"
 #include "asyn_lockfree_queue.h"
 #include "asyn_worker.h"
@@ -36,13 +36,15 @@ public:
 
     template<typename... A>
     void command_worker(int wid, int type, A... args) {
-        _workers[wid].command(type, args...);
+        if (wid >= 0 && wid < sizeof(_workers) / sizeof(_workers[0])) {
+            _workers[wid].command(type, args...);
+        }
     }
 
 private:
     int _code = 0;
-    volatile bool _startup = false;
-    int _next_cid = 0;
+    std::atomic<bool> _startup;
+    std::atomic<int> _next_cid;
     lockfree_queue<std::shared_ptr<coroutine>> _coroutines;
     worker _workers[5];
     lockfree_queue<box::object> _requests;
