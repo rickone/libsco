@@ -6,17 +6,6 @@
 
 using namespace asyn;
 
-sys_hook(usleep)
-int usleep(useconds_t usec) {
-    if (!worker::current()) {
-        return sys_org(usleep)(usec);
-    }
-
-    int64_t ns = usec * 1'000;
-    asyn::nsleep(ns);
-    return 0;
-}
-
 sys_hook(sleep)
 unsigned int sleep(unsigned int seconds) {
     if (!worker::current()) {
@@ -24,6 +13,17 @@ unsigned int sleep(unsigned int seconds) {
     }
 
     int64_t ns = seconds * 1'000'000'000;
+    asyn::nsleep(ns);
+    return 0;
+}
+
+sys_hook(usleep)
+int usleep(useconds_t usec) {
+    if (!worker::current()) {
+        return sys_org(usleep)(usec);
+    }
+
+    int64_t ns = usec * 1'000;
     asyn::nsleep(ns);
     return 0;
 }

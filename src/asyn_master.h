@@ -4,7 +4,6 @@
 #include "asyn_coroutine.h"
 #include "asyn_lockfree_queue.h"
 #include "asyn_worker.h"
-#include "asyn_monitor.h"
 
 namespace asyn {
 
@@ -18,25 +17,22 @@ public:
     void enter();
     void quit(int code = 0);
     void main();
-    int start_coroutine(const coroutine::func_t& func);
+    std::shared_ptr<coroutine> start_coroutine(const coroutine::func_t& func);
     std::shared_ptr<coroutine> pop_coroutine();
     void on_thread();
-    void on_request(int type, box::object& obj);
-    void on_join(int cid, int target_cid);
 
     bool is_startup() const { return _startup; }
 
     template<typename... A>
-    void request(int type, A... args) {
-        box::object obj;
-        obj.store(type);
-        obj.store_args(args...);
-        _requests.push(std::move(obj));
-    }
-
-    template<typename... A>
     void command_worker(int wid, int type, A... args) {
-        if (wid >= 0 && wid < sizeof(_workers) / sizeof(_workers[0])) {
+        if (wid < 0) {
+            for (int i = 0; i < sizeof(_workers) / sizeof(_workers[0]); i++) {
+                _workers[i].command(type, args...);
+            }
+            return;
+        }
+
+        if (wid < sizeof(_workers) / sizeof(_workers[0])) {
             _workers[wid].command(type, args...);
         }
     }
@@ -44,34 +40,9 @@ public:
 private:
     int _code = 0;
     std::atomic<bool> _startup;
-    std::atomic<int> _next_cid;
     lockfree_queue<std::shared_ptr<coroutine>> _coroutines;
     worker _workers[5];
-    lockfree_queue<box::object> _requests;
-    monitor _monitor;
     coroutine _master_co;
 };
-
-enum { // request type
-    req_coroutine_start,
-    req_coroutine_stop,
-    req_join,
-};
-
-class guard {
-public:
-    guard() {
-        master::inst()->enter();
-    }
-    ~guard() {
-        master::inst()->quit();
-    }
-};
-
-inline int start(const coroutine::func_t& func) {
-    return master::inst()->start_coroutine(func);
-}
-
-void join(int cid);
 
 } // asyn

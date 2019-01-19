@@ -153,12 +153,12 @@ void poller::poll(int64_t ns) {
 #endif // __APPLE__
 
 void poller::wait(int fd, int event_flag) {
-    auto w = worker::current();
-    if (!w) { // panic
+    auto cur_worker = worker::current();
+    if (!cur_worker) { // panic
         return;
     }
 
-    auto co = w->co_self();
+    auto co = cur_worker->co_self();
     if (!co) { // panic
         return;
     }

@@ -6,7 +6,9 @@
 
 using namespace asyn;
 
-coroutine::coroutine(int id, const func_t& func) : _id(id), _func(func) {
+coroutine::coroutine(const func_t& func) : _func(func) {
+    static std::atomic<int> s_next_cid;
+    _id = ++s_next_cid;
 }
 
 coroutine::~coroutine() {
@@ -16,11 +18,11 @@ coroutine::~coroutine() {
 }
 
 coroutine* coroutine::self() {
-    auto w = worker::current();
-    if (!w) {
+    auto cur_worker = worker::current();
+    if (!cur_worker) {
         return nullptr;
     }
-    return w->co_self();
+    return cur_worker->co_self();
 }
 
 void coroutine::body(coroutine* co) {
@@ -56,9 +58,9 @@ void coroutine::init(const func_t& func, size_t stack_len) {
 }
 
 void coroutine::set_self() {
-    auto w = worker::current();
-    if (w) {
-        w->set_co_self(this);
+    auto cur_worker = worker::current();
+    if (cur_worker) {
+        cur_worker->set_co_self(this);
     }
 }
 
@@ -74,7 +76,7 @@ bool coroutine::resume() {
     }
 
     auto self = coroutine::self();
-    if (self == nullptr) {
+    if (!self) {
         return false; // panic
     }
 
@@ -86,7 +88,7 @@ bool coroutine::resume() {
 }
 
 void coroutine::yield() {
-    if (_ctx.uc_link == nullptr) {
+    if (!_ctx.uc_link) {
         return; // panic
     }
 
@@ -95,7 +97,7 @@ void coroutine::yield() {
 }
 
 void coroutine::yield_return() {
-    if (_ctx.uc_link == nullptr) {
+    if (!_ctx.uc_link) {
         return; // panic
     }
 

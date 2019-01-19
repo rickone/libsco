@@ -1,4 +1,5 @@
 #include "asyn_master.h"
+#include "asyn_coordinator.h"
 #include <unistd.h>
 #include <signal.h>
 
@@ -14,13 +15,10 @@ master* master::inst() {
 }
 
 void master::enter() {
-    int cid = ++_next_cid;
-    auto main_co = std::make_shared<coroutine>(cid, nullptr);
-    main_co->init();
-    _coroutines.push(main_co);
+    auto co = start_coroutine(nullptr);
 
     _master_co.init(std::bind(&master::main, this));
-    main_co->swap(&_master_co);
+    co->swap(&_master_co);
 }
 
 void master::quit(int code) {
@@ -49,11 +47,14 @@ void master::main() {
     _exit(_code);
 }
 
-int master::start_coroutine(const coroutine::func_t& func) {
-    int cid = ++_next_cid;
-    auto co = std::make_shared<coroutine>(cid, func);
+std::shared_ptr<coroutine> master::start_coroutine(const coroutine::func_t& func) {
+    auto co = std::make_shared<coroutine>(func);
+    if (!func) {
+        co->init();
+    }
     _coroutines.push(co);
-    return cid;
+    coordinator::inst()->request(req_create, co->id());
+    return co;
 }
 
 std::shared_ptr<coroutine> master::pop_coroutine() {
@@ -65,55 +66,9 @@ std::shared_ptr<coroutine> master::pop_coroutine() {
 void master::on_thread() {
     _workers[0].init_thread(&_master_co);
 
+    auto coor = coordinator::inst();
     while (is_startup()) {
-        bool idle = true;
-        while (true) {
-            box::object obj;
-            if (!_requests.pop(obj)) {
-                break;
-            }
-
-            idle = false;
-            auto type = obj.load<int>();
-            on_request(type, obj);
-        }
-
+        coor->on_step();
         _workers[0].on_step();
     }
-}
-
-void master::on_request(int type, box::object& obj) {
-    switch (type) {
-        case req_coroutine_start:
-            obj.invoke(&monitor::on_coroutine_start, &_monitor);
-            break;
-        case req_coroutine_stop:
-            obj.invoke(&monitor::on_coroutine_stop, &_monitor);
-            break;
-        case req_join:
-            obj.invoke(&master::on_join, this);
-    }
-}
-
-void master::on_join(int cid, int target_cid) {
-    auto status = _monitor.get_co_status(target_cid);
-    if (status == nullptr) {
-        auto join_status = _monitor.get_co_status(cid);
-        if (join_status) {
-            command_worker(join_status->wid, cmd_resume, cid);
-        }
-        return;
-    }
-
-    status->join_cid = cid;
-}
-
-void asyn::join(int cid) {
-    auto self = coroutine::self();
-    if (self == nullptr || self->id() == cid) {
-        return;
-    }
-
-    master::inst()->request(req_join, self->id(), cid);
-    worker::current()->yield(self);
 }

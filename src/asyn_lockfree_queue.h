@@ -47,7 +47,7 @@ public:
         node_t* next = nullptr;
         do {
             next = node->next;
-            if (next == nullptr)
+            if (!next)
                 return false;
 
         } while (!_head.compare_exchange_weak(node, next, std::memory_order_release, std::memory_order_consume));

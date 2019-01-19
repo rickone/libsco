@@ -21,7 +21,7 @@ public:
     typedef std::function<void(void)> func_t;
     
     coroutine() = default;
-    coroutine(int id, const func_t& func);
+    explicit coroutine(const func_t& func);
     coroutine(const coroutine& other) = delete;
     coroutine(coroutine&& other) = delete;
     ~coroutine();
@@ -116,6 +116,7 @@ inline box::object resume(const std::shared_ptr<coroutine>& co, A... args) {
     return co->get_value();
 }
 
+/*
 template<typename... A>
 inline box::object yield(A... args) {
     auto self = coroutine::self();
@@ -130,5 +131,6 @@ inline void yield_return(A... args) {
     self->set_value(args...);
     self->yield_return();
 }
+*/
 
 } // asyn

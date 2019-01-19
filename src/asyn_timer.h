@@ -22,10 +22,4 @@ private:
 
 void nsleep(int64_t ns);
 
-template <class Rep, class Period>
-void sleep_for(const std::chrono::duration<Rep, Period>& dtn) {
-    auto nsdtn = std::chrono::duration_cast<std::chrono::nanoseconds>(dtn);
-    nsleep(nsdtn.count());
-}
-
 } // asyn

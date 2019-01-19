@@ -1,5 +1,6 @@
 #include "asyn_worker.h"
 #include "asyn_master.h"
+#include "asyn_coordinator.h"
 #include "asyn_coroutine.h"
 #include "asyn_dlfunc.h"
 #include "asyn_timer.h"
@@ -42,9 +43,63 @@ void worker::join() {
     pthread_join(_thread, nullptr);
 }
 
-void worker::yield(coroutine* co) {
-    _yield_coroutines.insert(std::make_pair(co->id(), co->shared_from_this()));
-    co->yield();
+box::object worker::resume(int cid, const box::object& obj) {
+    if (!_self) {
+        return nullptr;
+    }
+
+    int self_cid = _self->id();
+    if (self_cid == cid) {
+        return nullptr;
+    }
+
+    _yield_coroutines.insert(std::make_pair(self_cid, _self->shared_from_this()));
+    coordinator::inst()->request(req_resume, self_cid, cid, obj.str());
+    _self->yield();
+    return _self->get_value();
+}
+
+box::object worker::yield(const box::object& obj) {
+    if (!_self) {
+        return nullptr;
+    }
+
+    int self_cid = _self->id();
+    _yield_coroutines.insert(std::make_pair(self_cid, _self->shared_from_this()));
+    coordinator::inst()->request(req_yield, self_cid, obj.str());
+    _self->yield();
+    return _self->get_value();
+}
+
+void worker::yield_return(const box::object& obj) {
+    if (!_self) {
+        return;
+    }
+
+    int self_cid = _self->id();
+    _yield_coroutines.insert(std::make_pair(self_cid, _self->shared_from_this()));
+    coordinator::inst()->request(req_return, self_cid, obj.str());
+    _self->yield_return();
+}
+
+void worker::lock(int mid) {
+    if (!_self) {
+        return;
+    }
+
+    int self_cid = _self->id();
+    _yield_coroutines.insert(std::make_pair(self_cid, _self->shared_from_this()));
+    coordinator::inst()->request(req_lock, self_cid, mid);
+    _self->yield();
+}
+
+void worker::unlock(int mid) {
+    if (!_self) {
+        return;
+    }
+
+    int self_cid = _self->id();
+    coordinator::inst()->request(req_unlock, self_cid, mid);
 }
 
 void worker::on_thread() {
@@ -52,14 +107,15 @@ void worker::on_thread() {
     co.init();
     init_thread(&co);
 
-    master* ma = master::inst();
-    while (ma->is_startup()) {
+    master* mast = master::inst();
+    while (mast->is_startup()) {
         on_step();
     }
 }
 
 void worker::on_step() {
-    auto ma = master::inst();
+    auto mast = master::inst();
+    auto coor = coordinator::inst();
     //auto tp_begin = std::chrono::steady_clock::now();
     while (true) {
         box::object obj;
@@ -79,7 +135,7 @@ void worker::on_step() {
         if (co->status() == COROUTINE_DEAD) {
             _coroutines.erase(it++);
 
-            ma->request(req_coroutine_stop, cid);
+            coor->request(req_return, cid);
         } else {
             ++it;
         }
@@ -87,13 +143,13 @@ void worker::on_step() {
 
     _timer.tick();
 
-    auto co = ma->pop_coroutine();
+    auto co = mast->pop_coroutine();
     if (co) {
-        ma->request(req_coroutine_start, co->id(), _id);
+        coor->request(req_start, co->id(), _id);
 
         co->init();
         try {
-            co->resume();    
+            co->resume();
         } catch (std::exception& err) {
             fprintf(stderr, "Error: %s\n", err.what());
         }
@@ -112,7 +168,7 @@ void worker::on_command(int type, box::object& obj) {
     }
 }
 
-void worker::on_resume(int cid) {
+void worker::on_resume(int cid, const std::string& str) {
     auto it = _yield_coroutines.find(cid);
     if (it == _yield_coroutines.end()) {
         return;
@@ -120,5 +176,8 @@ void worker::on_resume(int cid) {
 
     std::shared_ptr<coroutine> co = it->second;
     _yield_coroutines.erase(it);
+
+    box::object obj(str);
+    co->move_value(std::move(obj));
     co->resume();
 }

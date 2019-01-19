@@ -21,17 +21,21 @@ public:
     void run(int id);
     void init_thread(coroutine* self);
     void join();
-    void yield(coroutine* co);
+    box::object resume(int cid, const box::object& obj);
+    box::object yield(const box::object& obj);
+    void yield_return(const box::object& obj);
+    void lock(int mid);
+    void unlock(int mid);
     void on_thread();
     void on_step();
     void on_command(int type, box::object& obj);
-    void on_resume(int cid);
+    void on_resume(int cid, const std::string& str);
 
     template<typename... A>
     void command(int type, A... args) {
         box::object obj;
         obj.store(type);
-        obj.store(args...);
+        obj.store_args(args...);
         _commands.push(std::move(obj));
     }
 

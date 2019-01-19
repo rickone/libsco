@@ -38,19 +38,19 @@ public:
 
         close();
         _handler = dlopen(str_name.c_str(), RTLD_LAZY);
-        if (_handler == nullptr) { // panic
+        if (!_handler) { // panic
             fprintf(stderr, "dlopen failed: %s\n", dlerror());
             return;
         }
     }
 
     void sym(const char* funcname) {
-        if (_handler == nullptr) { // panic
+        if (!_handler) { // panic
             return;
         }
 
         _addr = dlsym(_handler, funcname);
-        if (_addr == nullptr) { // panic
+        if (!_addr) { // panic
             fprintf(stderr, "dlsym failed: %s\n", dlerror());
         }
     }
@@ -61,7 +61,7 @@ public:
         }
 
         _addr = dlsym(RTLD_NEXT, funcname);
-        if (_addr == nullptr) { // panic
+        if (!_addr) { // panic
             fprintf(stderr, "dlsym failed: %s\n", dlerror());
         }
         printf("RTLD_NEXT %s\n", funcname);
