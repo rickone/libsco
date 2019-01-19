@@ -2,6 +2,7 @@
 
 #include "asyn_master.h"
 #include "asyn_mutex.h"
+#include "asyn_wait_group.h"
 
 namespace asyn {
 

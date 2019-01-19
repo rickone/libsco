@@ -41,7 +41,8 @@ mutex_snapshot* coordinator::get_mutex_snapshot(int mid) {
 }
 
 void coordinator::on_request(int type, box::object& obj) {
-    //printf("on_request: %d\n", type);
+    //static int i = 0;
+    //printf("on_request[%d]: %d\n", ++i, type);
     switch (type) {
         case req_create:
             obj.invoke(&coordinator::on_create, this);

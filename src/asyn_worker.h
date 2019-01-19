@@ -11,6 +11,9 @@
 
 namespace asyn {
 
+#define MIN_CO_COUNT 16
+#define TIMESLICE_NANOSEC 10'000'000ll
+
 class worker {
 public:
     worker() = default;
@@ -54,6 +57,8 @@ private:
     std::list<std::shared_ptr<coroutine>> _coroutines;
     lockfree_queue<box::object> _commands;
     std::unordered_map<int, std::shared_ptr<coroutine>> _yield_coroutines;
+    int _max_co_count = 0;
+    int64_t _timeslice_ns = 0;
 };
 
 enum { // command type

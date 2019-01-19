@@ -7,7 +7,7 @@
 
 namespace asyn {
 
-const int COROUTINE_DEFAULT_STACK_LEN = 1024 * 256;
+const int COROUTINE_DEFAULT_STACK_LEN = 1024 * 64;
 
 enum {
     COROUTINE_UNINIT,

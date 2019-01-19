@@ -37,6 +37,8 @@ void worker::init_thread(coroutine* self) {
     _poller.init();
     pthread_once(&s_context_once, make_context_key);
     pthread_setspecific(s_context_key, this);
+    _max_co_count = MIN_CO_COUNT;
+    _timeslice_ns = TIMESLICE_NANOSEC;
 }
 
 void worker::join() {
@@ -116,7 +118,8 @@ void worker::on_thread() {
 void worker::on_step() {
     auto mast = master::inst();
     auto coor = coordinator::inst();
-    //auto tp_begin = std::chrono::steady_clock::now();
+    auto tp_begin = std::chrono::steady_clock::now();
+
     while (true) {
         box::object obj;
         if (!_commands.pop(obj)) {
@@ -143,8 +146,13 @@ void worker::on_step() {
 
     _timer.tick();
 
-    auto co = mast->pop_coroutine();
-    if (co) {
+    int co_count = 0;
+    for (; co_count < _max_co_count; co_count++) {
+        auto co = mast->pop_coroutine();
+        if (!co) {
+            break;
+        }
+
         coor->request(req_start, co->id(), _id);
 
         co->init();
@@ -157,7 +165,24 @@ void worker::on_step() {
         _coroutines.push_back(co);
     }
 
-    _poller.poll(10'000'000);
+    if (co_count == _max_co_count) {
+        _max_co_count = _max_co_count * 4;
+    } else {
+        _max_co_count = std::max(MIN_CO_COUNT, _max_co_count / 2);
+    }
+
+    auto tp = std::chrono::steady_clock::now();
+    int64_t ns = std::chrono::duration_cast<std::chrono::nanoseconds>(tp - tp_begin).count();
+    int64_t remain_ns = 0;
+    if (_timeslice_ns < ns) {
+        _timeslice_ns += 1'000'000;
+    } else {
+        remain_ns = _timeslice_ns - ns;
+        _timeslice_ns = std::max(TIMESLICE_NANOSEC, ns);
+    }
+
+    _poller.poll(remain_ns);
+    //printf("co=%d, rn=%lld\n", _max_co_count, remain_ns);
 }
 
 void worker::on_command(int type, box::object& obj) {

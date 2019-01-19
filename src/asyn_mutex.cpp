@@ -3,40 +3,32 @@
 
 using namespace asyn;
 
-mutex::mutex() {
-    static std::atomic<int> s_next_id;
-    _id = ++s_next_id;
-}
-
-mutex::mutex(const mutex& other) : _id(other._id) {
-}
-
-mutex::mutex(mutex&& other) : _id(other._id) {
-    other._id = 0;
-}
-
 void mutex::lock() {
-    if (_id == 0) { // panic
-        return;
-    }
-
     auto cur_worker = worker::current();
     if (!cur_worker) { // panic
         return;
     }
 
-    cur_worker->lock(_id);
+    auto self = cur_worker->co_self();
+    if (!self) { // panic
+        return;
+    }
+
+    //compare_and_set _cid 0 -> self->id()
+    // if success lock else yield
 }
 
 void mutex::unlock() {
-    if (_id == 0) { // panic
-        return;
-    }
-
     auto cur_worker = worker::current();
     if (!cur_worker) { // panic
         return;
     }
 
-    cur_worker->unlock(_id);
+    auto self = cur_worker->co_self();
+    if (!self) { // panic
+        return;
+    }
+
+    // compare_and_set _cid self->id() -> 0
+    // if success unlock else yield
 }

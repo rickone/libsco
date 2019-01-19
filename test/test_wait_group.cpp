@@ -1,7 +1,8 @@
 #include "asyn.h"
 #include <cstdio>
+#include <mutex>
 
-static asyn::mutex s_mutex;
+static std::mutex s_mutex;
 static std::vector<int> s_result;
 
 bool is_prime(int n) {
@@ -20,26 +21,29 @@ bool is_prime(int n) {
     return true;
 }
 
-void foo(int n) {
-    if (!is_prime(n))
+void foo(int n, asyn::wait_group* wg) {
+    if (!is_prime(n)) {
+        wg->done();
         return;
+    }
 
     s_mutex.lock();
     s_result.push_back(n);
     s_mutex.unlock();
+    wg->done();
 }
 
 int main() {
     asyn::guard ag;
 
-    std::vector<int> cos;
+    asyn::wait_group wg;
+    wg.add(998);
+
     for (int i = 2; i < 1000; i++) {
-        cos.push_back(asyn::start(std::bind(foo, i)));
+        asyn::start(std::bind(foo, i, &wg));
     }
 
-    for (int cid : cos) {
-        asyn::wait(cid);
-    }
+    wg.wait();
 
     puts("prime number:");
     for (int n : s_result) {
