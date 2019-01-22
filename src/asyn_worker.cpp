@@ -45,6 +45,19 @@ void worker::join() {
     pthread_join(_thread, nullptr);
 }
 
+void worker::pause() {
+    if (!_self) {
+        return;
+    }
+
+    auto ret = _paused_coroutines.emplace(_self->id(), _self->shared_from_this());
+    if (!ret.second) {
+        return;
+    }
+
+    _self->yield();
+}
+
 box::object worker::resume(int cid, const box::object& obj) {
     if (!_self) {
         return nullptr;
@@ -144,6 +157,8 @@ void worker::on_step() {
         }
     }
 
+    process_paused_coroutines();
+
     _timer.tick();
 
     int co_count = 0;
@@ -183,6 +198,17 @@ void worker::on_step() {
 
     _poller.poll(remain_ns);
     //printf("co=%d, rn=%lld\n", _max_co_count, remain_ns);
+}
+
+void worker::process_paused_coroutines() {
+    auto it = _paused_coroutines.begin();
+    auto it_end = _paused_coroutines.end();
+    while (it != it_end) {
+        auto co = it->second;
+        _paused_coroutines.erase(it++);
+
+        co->resume();
+    }
 }
 
 void worker::on_command(int type, box::object& obj) {

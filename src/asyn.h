@@ -72,4 +72,13 @@ inline box::object wait(int cid) {
     return cur_worker->resume(cid, nullptr);
 }
 
+void pause() {
+    auto cur_worker = worker::current();
+    if (!cur_worker) {
+        return;
+    }
+
+    cur_worker->pause();
+}
+
 } // asyn

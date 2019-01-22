@@ -18,8 +18,6 @@ public:
 
 private:
     std::atomic<int> _cid;
-    int _wid = -1;
-    lockfree_queue<std::pair<int, int>> _wait_queue;
 };
 
 } // asyn
