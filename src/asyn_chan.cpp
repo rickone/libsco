@@ -3,12 +3,13 @@
 
 using namespace asyn;
 
-chan::chan() {
-    _queue = std::make_shared<lockfree_queue<box::object>>();
+chan::chan() : _queue(new lockfree_queue<box::object>()) {
 }
 
-chan::~chan() {
-    _queue.reset();
+chan::chan(const chan& other) : _queue(other._queue) {
+}
+
+chan::chan(chan&& other) : _queue(other._queue) {
 }
 
 void chan::send_obj(const box::object& obj) {

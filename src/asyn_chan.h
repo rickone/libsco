@@ -8,7 +8,9 @@ namespace asyn {
 class chan {
 public:
     chan();
-    ~chan();
+    ~chan() = default;
+    chan(const chan& other);
+    chan(chan&& other);
 
     void send_obj(const box::object& obj);
     box::object recv_obj();

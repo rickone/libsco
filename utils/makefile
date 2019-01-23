@@ -72,8 +72,8 @@ define info
 	@echo "<<<<"
 endef
 
-.PHONY: all start clean
-all: start $(TargetPath)
+.PHONY: all start clean end
+all: start $(TargetPath) end
 
 clean:
 	rm -rf $(ObjDirPath)
@@ -81,11 +81,13 @@ clean:
 start:
 	$(info)
 
+end:
+	$(AfterBuild)
+
 $(TargetPath): $(Obj:%=$(ObjDirPath)/%)
 	$(AfterCompile)
 	@echo Link $@ ...
 	@$(Link)
-	$(AfterBuild)
 
 -include $(Dep:%=$(ObjDirPath)/%)
 

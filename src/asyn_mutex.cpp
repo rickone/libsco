@@ -3,6 +3,15 @@
 
 using namespace asyn;
 
+mutex::mutex() : _cid(new std::atomic<int>(0)) {
+}
+
+mutex::mutex(const mutex& other) : _cid(other._cid) {
+}
+
+mutex::mutex(mutex&& other) : _cid(other._cid) {
+}
+
 void mutex::lock() {
     auto cur_worker = worker::current();
     if (!cur_worker) { // panic
@@ -16,7 +25,7 @@ void mutex::lock() {
 
     while (true) {
         int nil = 0;
-        if (_cid.compare_exchange_weak(nil, self->id())) {
+        if (_cid->compare_exchange_weak(nil, self->id())) {
             printf("lock->%d\n", self->id());
             return;
         }
@@ -32,7 +41,7 @@ void mutex::unlock() {
     }
 
     int self_cid = self->id();
-    if (!_cid.compare_exchange_weak(self_cid, 0)) { // panic
+    if (!_cid->compare_exchange_weak(self_cid, 0)) { // panic
         return;
     }
 

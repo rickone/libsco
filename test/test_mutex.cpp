@@ -20,30 +20,29 @@ bool is_prime(int n) {
     return true;
 }
 
-void foo(int n, asyn::wait_group* wg) {
+void foo(int n) {
     if (!is_prime(n)) {
-        wg->done();
         return;
     }
 
     s_mutex.lock();
     s_result.push_back(n);
     s_mutex.unlock();
-    wg->done();
 }
 
 int main() {
     asyn::guard ag;
 
-    asyn::wait_group wg;
-    wg.add(998);
-
-    std::vector<int> cos;
+    std::vector<asyn::future<void>> futs;
     for (int i = 2; i < 1000; i++) {
-        cos.push_back(asyn::start(std::bind(foo, i, &wg)));
+        futs.push_back(asyn::start(std::bind(foo, i)));
     }
 
-    wg.wait();
+    int i = 0;
+    for (auto& fut : futs) {
+        fut.wait();
+        printf("wait->%d\n", ++i);
+    }
 
     puts("prime number:");
     for (int n : s_result) {

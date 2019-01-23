@@ -16,3 +16,6 @@ test: src
 
 3rd:
 	$(MAKE) -C 3rd
+
+inc:
+	cd src && make inc

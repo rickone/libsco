@@ -3,39 +3,49 @@
 
 using namespace asyn;
 
-void wait_group::add(int count) {
-    _count += count;
+wait_group::wait_group() : _count(new std::atomic<int>(0)) {
+}
+
+wait_group::wait_group(const wait_group& other) : _count(other._count) {
+}
+
+wait_group::wait_group(wait_group&& other) : _count(other._count) {
+}
+
+void wait_group::start(const std::function<void ()>& f) {
+    _count->fetch_add(1, std::memory_order_release);
+    coroutine::func_t func = [f, this](){
+        f();
+        done();
+    };
+    master::inst()->start_coroutine(func);
+}
+
+void wait_group::start(void (*f)()) {
+    _count->fetch_add(1, std::memory_order_release);
+    coroutine::func_t func = [f, this](){
+        f();
+        done();
+    };
+    master::inst()->start_coroutine(func);
 }
 
 void wait_group::done() {
-    int count = --_count;
-    if (count != 0) {
-        return;
-    }
-
-    if (_cid == 0) {
-        return;
-    }
-
-    master::inst()->command_worker(_wid, cmd_resume, _cid);
+    _count->fetch_sub(1, std::memory_order_release);
 }
 
 void wait_group::wait() {
-    if (_count <= 0) { // panic
-        return;
-    }
-
     auto cur_worker = worker::current();
     if (!cur_worker) { // panic
         return;
     }
 
-    auto self = cur_worker->co_self();
-    if (!self) { // panic
-        return;
-    }
+    while (true) {
+        int count = _count->load(std::memory_order_consume);
+        if (count == 0) {
+            return;
+        }
 
-    _cid = self->id();
-    _wid = cur_worker->id();
-    cur_worker->yield(nullptr);
+        cur_worker->pause();
+    }
 }

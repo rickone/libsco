@@ -1,5 +1,4 @@
 #include "asyn_master.h"
-#include "asyn_coordinator.h"
 #include <unistd.h>
 #include <signal.h>
 
@@ -53,7 +52,6 @@ std::shared_ptr<coroutine> master::start_coroutine(const coroutine::func_t& func
         co->init();
     }
     _coroutines.push(co);
-    coordinator::inst()->request(req_create, co->id());
     return co;
 }
 
@@ -66,9 +64,7 @@ std::shared_ptr<coroutine> master::pop_coroutine() {
 void master::on_thread() {
     _workers[0].init_thread(&_master_co);
 
-    auto coor = coordinator::inst();
     while (is_startup()) {
-        coor->on_step();
         _workers[0].on_step();
     }
 }
