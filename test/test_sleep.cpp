@@ -43,8 +43,6 @@ void foo4() {
 }
 
 int main() {
-    asyn::guard ag;
-
     asyn::start(foo0);
     asyn::start(foo1);
     asyn::start(foo2);
@@ -52,7 +50,5 @@ int main() {
     asyn::start(foo4);
 
     asyn::sleep_for(11s);
-
-    fflush(stdout);
     return 0;
 }

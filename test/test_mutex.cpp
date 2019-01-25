@@ -1,6 +1,8 @@
 #include "asyn.h"
 #include <cstdio>
 
+using namespace std::chrono_literals;
+
 static asyn::mutex s_mutex;
 static std::vector<int> s_result;
 
@@ -31,18 +33,11 @@ void foo(int n) {
 }
 
 int main() {
-    asyn::guard ag;
-
-    std::vector<asyn::future<void>> futs;
     for (int i = 2; i < 1000; i++) {
-        futs.push_back(asyn::start(std::bind(foo, i)));
+        asyn::start(std::bind(foo, i));
     }
 
-    int i = 0;
-    for (auto& fut : futs) {
-        fut.wait();
-        printf("wait->%d\n", ++i);
-    }
+    asyn::sleep_for(1s);
 
     puts("prime number:");
     for (int n : s_result) {

@@ -3,17 +3,8 @@
 
 using namespace asyn;
 
-wait_group::wait_group() : _count(new std::atomic<int>(0)) {
-}
-
-wait_group::wait_group(const wait_group& other) : _count(other._count) {
-}
-
-wait_group::wait_group(wait_group&& other) : _count(other._count) {
-}
-
 void wait_group::start(const std::function<void ()>& f) {
-    _count->fetch_add(1, std::memory_order_release);
+    _count.fetch_add(1, std::memory_order_release);
     coroutine::func_t func = [f, this](){
         f();
         done();
@@ -22,7 +13,7 @@ void wait_group::start(const std::function<void ()>& f) {
 }
 
 void wait_group::start(void (*f)()) {
-    _count->fetch_add(1, std::memory_order_release);
+    _count.fetch_add(1, std::memory_order_release);
     coroutine::func_t func = [f, this](){
         f();
         done();
@@ -31,7 +22,7 @@ void wait_group::start(void (*f)()) {
 }
 
 void wait_group::done() {
-    _count->fetch_sub(1, std::memory_order_release);
+    _count.fetch_sub(1, std::memory_order_release);
 }
 
 void wait_group::wait() {
@@ -41,7 +32,7 @@ void wait_group::wait() {
     }
 
     while (true) {
-        int count = _count->load(std::memory_order_consume);
+        int count = _count.load(std::memory_order_consume);
         if (count == 0) {
             return;
         }

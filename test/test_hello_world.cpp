@@ -8,8 +8,6 @@ void foo(int i) {
 }
 
 int main() {
-    asyn::guard ag;
-
     for (int i = 0; i < 20; i++) {
         asyn::start(std::bind(foo, i));
     }

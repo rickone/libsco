@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <atomic>
 #include <utility>
 #include "asyn_lockfree_queue.h"
@@ -9,7 +8,7 @@ namespace asyn {
 
 class mutex {
 public:    
-    mutex();
+    mutex() = default;
     ~mutex() = default;
     mutex(const mutex& other);
     mutex(mutex&& other);
@@ -18,7 +17,7 @@ public:
     void unlock();
 
 private:
-    std::shared_ptr<std::atomic<int>> _cid;
+    std::atomic<int> _cid;
 };
 
 } // asyn

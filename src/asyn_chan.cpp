@@ -3,20 +3,17 @@
 
 using namespace asyn;
 
-chan::chan() : _queue(new lockfree_queue<box::object>()) {
-}
-
-chan::chan(const chan& other) : _queue(other._queue) {
-}
-
-chan::chan(chan&& other) : _queue(other._queue) {
-}
-
 void chan::send_obj(const box::object& obj) {
-    _queue->push(obj);
+    _queue.push(obj);
 }
 
 box::object chan::recv_obj() {
+    box::object obj;
+    _queue.pop(obj);
+    return obj;
+}
+
+box::object chan::wait_obj() {
     auto cur_worker = worker::current();
     if (!cur_worker) { // panic
         return nullptr;
@@ -24,7 +21,7 @@ box::object chan::recv_obj() {
 
     while (true) {
         box::object obj;
-        if (_queue->pop(obj)) {
+        if (_queue.pop(obj)) {
             return obj;
         }
 

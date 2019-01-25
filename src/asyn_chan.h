@@ -7,13 +7,15 @@ namespace asyn {
 
 class chan {
 public:
-    chan();
+    chan() = default;
     ~chan() = default;
-    chan(const chan& other);
-    chan(chan&& other);
+    chan(const chan&) = delete;
+    chan(chan&&) = delete;
+    chan& operator=(const chan&) = delete;
 
     void send_obj(const box::object& obj);
     box::object recv_obj();
+    box::object wait_obj();
 
     template<typename T>
     void send(T val) {
@@ -23,13 +25,23 @@ public:
     }
 
     template<typename T>
-    T recv() {
+    bool recv(T& val) {
         auto obj = recv_obj();
-        return obj.load<T>();
+        if (!obj) {
+            return false;
+        }
+        val = obj.load<T>();
+        return true;
     }
 
+    template<typename T>
+    T wait() {
+        auto obj = wait_obj();
+        return obj.load<T>();
+    }    
+
 private:
-    std::shared_ptr<lockfree_queue<box::object>> _queue;
+    lockfree_queue<box::object> _queue;
 };
 
 } // asyn

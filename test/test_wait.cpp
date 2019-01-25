@@ -14,12 +14,9 @@ int foo() {
 }
 
 int main() {
-    asyn::guard ag;
-
-    auto fut = asyn::start(foo);
-    auto s = fut.wait();
+    auto ch = asyn::start(foo);
+    auto s = ch->wait<int>();
 
     printf("s=%d\n", s);
-    fflush(stdout);
     return 0;
 }

@@ -3,60 +3,46 @@
 #include "asyn_master.h"
 #include "asyn_mutex.h"
 #include "asyn_wait_group.h"
-#include "asyn_future.h"
+#include "asyn_chan.h"
 
 namespace asyn {
 
 class guard {
 public:
-    guard() {
-        master::inst()->enter();
-    }
-    ~guard() {
-        master::inst()->quit();
-    }
+    guard();
+    ~guard();
 };
 
-template<typename R>
-inline future<R> start(const std::function<R ()>& f) {
-    future<R> fut;
-    coroutine::func_t func = [&, f](){
-        R r = f();
-        fut.done(r);
-    };
-    master::inst()->start_coroutine(func);
-    return fut;
+extern guard g_guard_inst;
+
+inline void start(const std::function<void ()>& f) {
+    master::inst()->start_coroutine(f);
+}
+
+inline void start(void (*f)()) {
+    master::inst()->start_coroutine(f);
 }
 
 template<typename R>
-inline future<R> start(R (*f)()) {
-    future<R> fut;
-    coroutine::func_t func = [&, f](){
+inline std::shared_ptr<chan> start(const std::function<R ()>& f) {
+    auto ch = std::make_shared<chan>();
+    coroutine::func_t func = [f, ch](){
         R r = f();
-        fut.done(r);
+        ch->send(r);
     };
     master::inst()->start_coroutine(func);
-    return fut;
+    return ch;
 }
 
-inline future<void> start(const std::function<void ()>& f) {
-    future<void> fut;
-    coroutine::func_t func = [&, f](){
-        f();
-        fut.done();
+template<typename R>
+inline std::shared_ptr<chan> start(R (*f)()) {
+    auto ch = std::make_shared<chan>();
+    coroutine::func_t func = [f, ch](){
+        R r = f();
+        ch->send(r);
     };
     master::inst()->start_coroutine(func);
-    return fut;
-}
-
-inline future<void> start(void (*f)()) {
-    future<void> fut;
-    coroutine::func_t func = [&, f](){
-        f();
-        fut.done();
-    };
-    master::inst()->start_coroutine(func);
-    return fut;
+    return ch;
 }
 
 template <class Rep, class Period>
@@ -72,6 +58,10 @@ void pause() {
     }
 
     cur_worker->pause();
+}
+
+inline void quit(int code) {
+    master::inst()->quit(code);
 }
 
 } // asyn

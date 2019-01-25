@@ -32,8 +32,6 @@ void foo(int n) {
 }
 
 int main() {
-    asyn::guard ag;
-
     asyn::wait_group wg;
 
     for (int i = 2; i < 1000; i++) {
