@@ -77,7 +77,7 @@ int main() {
 #include <cstdio>
 #include <mutex>
 
-static std::mutex s_mutex;
+static asyn::mutex s_mutex;
 static std::vector<int> s_result;
 
 bool is_prime(int n) {
@@ -123,7 +123,98 @@ int main() {
     return 0;
 }
 ```
-asyn::wait_group对象可以等待多个协程全部执行结束，它不需要协程函数一定有反回值，全部从它这里start的协程全部执行结束后，wait()会返回。多
-个协程需要访问的临界区需要用asyn::mutex保护，类似pthread_mutex，但不是在线程上加锁，而是在协程上加锁。
+asyn::wait_group对象可以等待多个协程全部执行结束，它只能创建无返回值的协程，全部从它这里start的协程全部执行结束后，wait()会返回。多
+个协程需要访问的临界区需要用asyn::mutex保护，类似pthread_mutex或者std::mutex，但不是在线程上加锁，而是在协程上加锁。
 
-# 直接使用协程 Coroutine
+# 同步Coroutine
+``` C++
+#include "asyn.h"
+#include <cstdio>
+
+void foo() {
+    for (int i = 0; i < 10; i++) {
+        asyn::yield("yeah", i);
+
+        if (i == 5) {
+            asyn::yield_return("asyn", 100);
+        }
+    }
+}
+
+int main() {
+    asyn::coroutine co(foo);
+    while (auto obj = asyn::resume(co)) {
+        auto yeah = obj.load<const char*>();
+        auto i = obj.load<int>();
+        printf("resume: ('%s', %d)\n", yeah, i);
+    }
+	return 0;
+}
+```
+asyn::start会创建协程并异步执行，你还可以同步的方式在当前协程直接执行一个asyn::coroutine对象并用asyn::resume()调度它，在协程内你可以使用asyn::yield()返回一些值并暂停，或者asyn::yield_return中止协程调用。
+
+# 枚举器
+``` C++
+#include "asyn.h"
+#include <cstdio>
+#include <cassert>
+
+bool is_prime(int n) {
+    if (n <= 2) {
+        return true;
+    }
+
+    if (n % 2 == 0) {
+        return false;
+    }
+
+    int m = (int)sqrt(n);
+    for (int i = 3; i <= m; i += 2) {
+        if (n % i == 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void hello() {
+    puts("Hello World!");
+}
+
+void foo(int start, int n) {
+    for (int i = 0; i < n; i++) {
+        int x = start + i;
+        if (is_prime(x)) {
+            asyn::yield(x);
+        }
+    }
+}
+
+void test() {
+    for (int i = 0; i < 10; ++i) {
+        if (i == 5) {
+            asyn::yield_return(100);
+        }
+
+        asyn::yield(i * i);
+    }
+}
+
+int main() {
+    for (auto& obj : asyn::coroutine(hello)) {
+        obj.clear();
+        assert(false);
+    }
+
+    for (auto& obj : asyn::coroutine(std::bind(foo, 2, 1000))) {
+        printf("prime=%d\n", obj.load<int>());
+    }
+
+    for (auto& obj : asyn::coroutine(test)) {
+        printf("n=%d\n", obj.load<int>());
+    }
+    return 0;
+}
+```
+同步协程本身就是一个枚举器，它有定义begin()和end()，可以对它进行遍历，得到结果是协程中不断asyn::yield()出来的值。
