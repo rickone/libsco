@@ -13,7 +13,6 @@ void foo() {
 
 int main() {
     asyn::coroutine co(foo);
-    co.init();
     while (auto obj = asyn::resume(co)) {
         auto yeah = obj.load<const char*>();
         auto i = obj.load<int>();

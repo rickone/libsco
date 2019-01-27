@@ -23,7 +23,6 @@ public:
     }
 
     ~lockfree_queue() {
-        // lock?
         for (auto node = _head.load(); node != nullptr; ) {
             auto next = node->next;
             delete node;

@@ -57,5 +57,5 @@ int main() {
     for (auto& obj : asyn::coroutine(test)) {
         printf("n=%d\n", obj.load<int>());
     }
-	return 0;
+    return 0;
 }
