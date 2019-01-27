@@ -12,6 +12,7 @@ public:
     wait_group(const wait_group&) = delete;
     wait_group(wait_group&&) = delete;
     wait_group& operator=(const wait_group&) = delete;
+    wait_group& operator=(wait_group&&) = delete;
 
     void start(const std::function<void ()>& f);
     void start(void (*f)());

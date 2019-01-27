@@ -9,7 +9,7 @@ namespace asyn {
 
 class master {
 public:
-    master() = default;
+    master();
     ~master() = default;
 
     static master* inst();
@@ -19,7 +19,6 @@ public:
     void main();
     std::shared_ptr<coroutine> start_coroutine(const coroutine::func_t& func);
     std::shared_ptr<coroutine> pop_coroutine();
-    void on_thread();
 
     bool is_startup() const { return _startup; }
 

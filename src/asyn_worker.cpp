@@ -1,3 +1,13 @@
+#ifdef __linux__
+#define _GNU_SOURCE
+#include <pthread.h>
+#endif
+#ifdef __APPLE__
+#define _DARWIN_C_SOURCE
+#include <mach/thread_policy.h>
+#include <mach/thread_act.h>
+#include <pthread.h>
+#endif
 #include "asyn_worker.h"
 #include "asyn_master.h"
 #include "asyn_coroutine.h"
@@ -17,7 +27,9 @@ static void make_context_key() {
 
 static void* work_routine(void* arg) {
     auto inst = (worker*)arg;
-    inst->on_thread();
+    coroutine co(nullptr);
+    co.init();
+    inst->on_thread(&co);
     return nullptr;
 }
 
@@ -26,22 +38,44 @@ worker* worker::current() {
     return (worker*)pthread_getspecific(s_context_key);
 }
 
-void worker::run(int id) {
-    _id = id;
+void worker::run() {
     pthread_create(&_thread, nullptr, work_routine, this);
-}
-
-void worker::init_thread(coroutine* self) {
-    _self = self;
-    _poller.init();
-    pthread_once(&s_context_once, make_context_key);
-    pthread_setspecific(s_context_key, this);
-    _max_co_count = MIN_CO_COUNT;
-    _timeslice_ns = TIMESLICE_NANOSEC;
 }
 
 void worker::join() {
     pthread_join(_thread, nullptr);
+}
+
+void worker::bind_cpu_core(int cpu_core) {
+    if (cpu_core < 0) {
+        return;
+    }
+
+    if (_thread == nullptr) {
+        _thread = pthread_self();
+    }
+
+#ifdef __linux__
+    cpu_set_t cpu_info;
+    CPU_ZERO(&cpu_info);
+    CPU_SET(cpu_core, &cpu_info);
+
+    if (pthread_setaffinity_np(_thread, sizeof(cpu_set_t), &cpu_info)) {
+        perror("pthread_setaffinity_np");
+        return;
+    }
+#endif // __linux__
+
+#ifdef __APPLE__
+    thread_affinity_policy_data_t policy = { cpu_core };
+    thread_port_t mach_thread = pthread_mach_thread_np(_thread);
+    if (thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1)) {
+        perror("thread_policy_set");
+        return;
+    }
+#endif // __APPLE__
+
+    printf("thread(%p) bind to cpu_core: %d\n", _thread, cpu_core);
 }
 
 void worker::pause() {
@@ -57,10 +91,14 @@ void worker::pause() {
     _self->yield();
 }
 
-void worker::on_thread() {
-    coroutine co;
-    co.init();
-    init_thread(&co);
+void worker::on_thread(coroutine* self) {
+    _self = self;
+    _poller.init();
+
+    pthread_once(&s_context_once, make_context_key);
+    pthread_setspecific(s_context_key, this);
+    _max_co_count = MIN_CO_COUNT;
+    _timeslice_ns = TIMESLICE_NANOSEC;
 
     master* mast = master::inst();
     while (mast->is_startup()) {

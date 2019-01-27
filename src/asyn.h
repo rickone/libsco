@@ -3,7 +3,7 @@
 #include "asyn_master.h"
 #include "asyn_mutex.h"
 #include "asyn_wait_group.h"
-#include "asyn_chan.h"
+#include "asyn_channel.h"
 
 namespace asyn {
 
@@ -24,8 +24,8 @@ inline void start(void (*f)()) {
 }
 
 template<typename R>
-inline std::shared_ptr<chan> start(const std::function<R ()>& f) {
-    auto ch = std::make_shared<chan>();
+inline std::shared_ptr<channel> start(const std::function<R ()>& f) {
+    auto ch = std::make_shared<channel>();
     coroutine::func_t func = [f, ch](){
         R r = f();
         ch->send(r);
@@ -35,8 +35,8 @@ inline std::shared_ptr<chan> start(const std::function<R ()>& f) {
 }
 
 template<typename R>
-inline std::shared_ptr<chan> start(R (*f)()) {
-    auto ch = std::make_shared<chan>();
+inline std::shared_ptr<channel> start(R (*f)()) {
+    auto ch = std::make_shared<channel>();
     coroutine::func_t func = [f, ch](){
         R r = f();
         ch->send(r);

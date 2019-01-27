@@ -36,6 +36,7 @@ public:
     lockfree_queue(const lockfree_queue&) = delete;
     lockfree_queue(lockfree_queue&&) = delete;
     lockfree_queue& operator=(const lockfree_queue&) = delete;
+    lockfree_queue& operator=(lockfree_queue&&) = delete;
 
     void push(const T& t) {
         node_t* new_node = new node_t(t);

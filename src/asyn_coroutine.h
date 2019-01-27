@@ -4,6 +4,7 @@
 #include <memory>
 #include <ucontext.h>
 #include "box.h"
+#include "asyn_iterator.h"
 
 namespace asyn {
 
@@ -20,20 +21,23 @@ class coroutine : public std::enable_shared_from_this<coroutine> {
 public:
     typedef std::function<void(void)> func_t;
     
-    coroutine() = default;
     explicit coroutine(const func_t& func);
-    coroutine(const coroutine& other) = delete;
-    coroutine(coroutine&& other) = delete;
     ~coroutine();
+    coroutine(const coroutine&) = delete;
+    coroutine(coroutine&&) = delete;
+    coroutine& operator=(const coroutine&) = delete;
+    coroutine& operator=(coroutine&&) = delete;
 
     static coroutine* self();
 
-    void init(const func_t& func = nullptr, size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
+    void init(size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
     void set_self();
     void swap(coroutine* co);
     bool resume();
     void yield();
     void yield_return();
+    iterator begin();
+    iterator end();
 
     box::object get_value() { return std::move(_val); }
 
@@ -60,63 +64,16 @@ private:
     box::object _val;
 };
 
-template<typename R, typename... A>
-inline std::shared_ptr<coroutine> create_coroutine(const std::function<R (A...)>& func, size_t stack_len = COROUTINE_DEFAULT_STACK_LEN) {
-    auto co = std::make_shared<coroutine>();
-    std::function<void(void)> real_func = [co, func](){
-        auto val = co->get_value();
-        auto r = val.call(func);
-        co->set_value(r);
-    };
-    co->init(real_func, stack_len);
-    return co;
-}
-
-template<typename R, typename... A>
-inline std::shared_ptr<coroutine> create_coroutine(R (*func)(A...), size_t stack_len = COROUTINE_DEFAULT_STACK_LEN) {
-    auto co = std::make_shared<coroutine>();
-    std::function<void(void)> real_func = [co, func](){
-        auto val = co->get_value();
-        auto r = val.call(func);
-        co->set_value(r);
-    };
-    co->init(real_func, stack_len);
-    return co;
-}
-
 template<typename... A>
-inline std::shared_ptr<coroutine> create_coroutine(const std::function<void (A...)>& func, size_t stack_len = COROUTINE_DEFAULT_STACK_LEN) {
-    auto co = std::make_shared<coroutine>();
-    std::function<void(void)> real_func = [co, func](){
-        auto val = co->get_value();
-        val.invoke(func);
-    };
-    co->init(real_func, stack_len);
-    return co;
+inline box::object resume(coroutine& co, A... args) {
+    if (co.status() != COROUTINE_SUSPEND)
+        return nullptr;
+
+    co.set_value(args...);
+    co.resume();
+    return co.get_value();
 }
 
-template<typename... A>
-inline std::shared_ptr<coroutine> create_coroutine(void (*func)(A...), size_t stack_len = COROUTINE_DEFAULT_STACK_LEN) {
-    auto co = std::make_shared<coroutine>();
-    std::function<void(void)> real_func = [co, func](){
-        auto val = co->get_value();
-        val.invoke(func);
-    };
-    co->init(real_func, stack_len);
-    return co;
-}
-
-template<typename... A>
-inline box::object resume(const std::shared_ptr<coroutine>& co, A... args) {
-    if (co->status() != COROUTINE_SUSPEND)
-        return box::object();
-
-    co->set_value(args...);
-    co->resume();
-    return co->get_value();
-}
-
-/*
 template<typename... A>
 inline box::object yield(A... args) {
     auto self = coroutine::self();
@@ -131,6 +88,5 @@ inline void yield_return(A... args) {
     self->set_value(args...);
     self->yield_return();
 }
-*/
 
 } // asyn

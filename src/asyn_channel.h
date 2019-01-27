@@ -5,13 +5,13 @@
 
 namespace asyn {
 
-class chan {
+class channel {
 public:
-    chan() = default;
-    ~chan() = default;
-    chan(const chan&) = delete;
-    chan(chan&&) = delete;
-    chan& operator=(const chan&) = delete;
+    channel() = default;
+    ~channel() = default;
+    channel(const channel&) = delete;
+    channel(channel&&) = delete;
+    channel& operator=(const channel&) = delete;
 
     void send_obj(const box::object& obj);
     box::object recv_obj();

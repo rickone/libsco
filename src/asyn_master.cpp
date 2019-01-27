@@ -1,11 +1,15 @@
 #include "asyn_master.h"
 #include <unistd.h>
 #include <signal.h>
+#include "asyn_env.h"
 
 using namespace asyn;
 
 static void on_quit(int sig) {
     master::inst()->quit(1);
+}
+
+master::master() : _master_co(std::bind(&master::main, this)) {
 }
 
 master* master::inst() {
@@ -16,7 +20,7 @@ master* master::inst() {
 void master::enter() {
     auto co = start_coroutine(nullptr);
 
-    _master_co.init(std::bind(&master::main, this));
+    _master_co.init();
     co->swap(&_master_co);
 }
 
@@ -32,17 +36,37 @@ void master::main() {
     signal(SIGQUIT, on_quit); // ctrl + '\'
     signal(SIGCHLD, SIG_IGN);
 
+    auto env = env::inst();
+    env->init();
+
+    int worker_num = env->get_env_int("ASYN_WORKER_NUM");
+    int cpu_num = (int)sysconf(_SC_NPROCESSORS_ONLN);
+    if (worker_num <= 0) {
+        worker_num = cpu_num;
+    }
+
+    std::vector<std::shared_ptr<worker>> workers;
+    for (int i = 0; i < worker_num; i++) {
+        workers.emplace_back(new worker());
+    }
+
     _startup = true;
-    for (int i = 1; i < 5; i++) {
-        _workers[i].run(i);
+    for (int i = 1; i < worker_num; i++) {
+        workers[i]->run();
     }
 
-    on_thread();
-
-    for (int i = 1; i < 5; i++) {
-        _workers[i].join();
+    int bind_cpu_core = env->get_env_int("ASYN_BIND_CPU_CORE");
+    if (bind_cpu_core > 0) {
+        for (int i = 0; i < worker_num && i < cpu_num; i++) {
+            workers[i]->bind_cpu_core(i);
+        }        
     }
 
+    workers[0]->on_thread(&_master_co);
+
+    for (int i = 1; i < worker_num; i++) {
+        workers[i]->join();
+    }
     _exit(_code);
 }
 
@@ -59,12 +83,4 @@ std::shared_ptr<coroutine> master::pop_coroutine() {
     std::shared_ptr<coroutine> co;
     _coroutines.pop(co);
     return co;
-}
-
-void master::on_thread() {
-    _workers[0].init_thread(&_master_co);
-
-    while (is_startup()) {
-        _workers[0].on_step();
-    }
 }

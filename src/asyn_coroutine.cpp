@@ -30,16 +30,13 @@ void coroutine::body(coroutine* co) {
         co->_func();
     }
 
+    co->_val.clear();
     co->_status = COROUTINE_DEAD;
 }
 
-void coroutine::init(const func_t& func, size_t stack_len) {
+void coroutine::init(size_t stack_len) {
     if (_status != COROUTINE_UNINIT) {
         return;
-    }
-
-    if (func) {
-        _func = func;
     }
 
     getcontext(&_ctx);
@@ -71,6 +68,10 @@ void coroutine::swap(coroutine* co) {
 }
 
 bool coroutine::resume() {
+    if (_status == COROUTINE_UNINIT) {
+        init();
+    }
+    
     if (_status != COROUTINE_SUSPEND) {
         return false;
     }
@@ -103,4 +104,12 @@ void coroutine::yield_return() {
 
     _status = COROUTINE_DEAD;
     swapcontext(&_ctx, _ctx.uc_link);
+}
+
+iterator coroutine::begin() {
+    return iterator(this);
+}
+
+iterator coroutine::end() {
+    return iterator();
 }

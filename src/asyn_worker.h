@@ -21,22 +21,20 @@ public:
 
     static worker* current();
 
-    void run(int id);
-    void init_thread(coroutine* self);
+    void run();
     void join();
+    void bind_cpu_core(int cpu_core);
     void pause();
-    void on_thread();
+    void on_thread(coroutine* self);
     void on_step();
     void process_paused_coroutines();
 
-    int id() const { return _id; }
     coroutine* co_self() { return _self; }
     void set_co_self(coroutine* self) { _self = self; }
     timer* timer_inst() { return &_timer; }
     poller* poller_inst() { return &_poller; }
 
 private:
-    int _id = 0;
     pthread_t _thread = nullptr;
     coroutine* _self = nullptr;
     timer _timer;
@@ -45,10 +43,6 @@ private:
     std::unordered_map<int, std::shared_ptr<coroutine>> _paused_coroutines;
     int _max_co_count = 0;
     int64_t _timeslice_ns = 0;
-};
-
-enum { // command type
-    cmd_resume,
 };
 
 } // asyn

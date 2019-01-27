@@ -5,22 +5,19 @@ void foo() {
     for (int i = 0; i < 10; i++) {
         asyn::yield("yeah", i);
 
-        if (i == 6) {
-            asyn::yield_return("done", 100);
+        if (i == 5) {
+            asyn::yield_return("asyn", 100);
         }
     }
 }
 
 int main() {
-    asyn::guard ag;
-
-    int cid = asyn::start(foo);
-    while (auto obj = asyn::wait(cid)) {
+    asyn::coroutine co(foo);
+    co.init();
+    while (auto obj = asyn::resume(co)) {
         auto yeah = obj.load<const char*>();
         auto i = obj.load<int>();
-        printf("wait: ('%s', %d)\n", yeah, i);
+        printf("resume: ('%s', %d)\n", yeah, i);
     }
-
-    fflush(stdout);
 	return 0;
 }
