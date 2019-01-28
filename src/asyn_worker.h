@@ -35,7 +35,7 @@ public:
     poller* poller_inst() { return &_poller; }
 
 private:
-    pthread_t _thread = nullptr;
+    pthread_t _thread = (pthread_t)0;
     coroutine* _self = nullptr;
     timer _timer;
     poller _poller;

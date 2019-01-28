@@ -1,5 +1,6 @@
 #include "asyn_env.h"
 #include <unistd.h>
+#include <cstring>
 
 using namespace asyn;
 

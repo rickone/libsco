@@ -37,7 +37,7 @@ void poller::add(int fd, int event_flag, coroutine* co) {
 void poller::set(int fd, int event_flag, coroutine* co) {
     struct epoll_event event;
     event.events = EPOLLET;
-    event.data.ptr = socket;
+    event.data.ptr = co;
 
     if (event_flag & EVENT_READ) {
         event.events |= EPOLLIN;

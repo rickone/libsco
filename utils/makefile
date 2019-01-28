@@ -34,7 +34,7 @@ Rpath = ./
 endif
 
 ifeq ($(suffix $(Target)),)
-Link = g++ -Wl,-rpath,$(Rpath) $(LibDir:%=-L%) $(Lib:%=-l%) $(LDFLAGS) -o $@ $^
+Link = g++ -Wl,-rpath,$(Rpath) $(LibDir:%=-L%) -o $@ $^ $(Lib:%=-l%) $(LDFLAGS)
 endif
 
 ifeq ($(suffix $(Target)),.so)

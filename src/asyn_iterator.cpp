@@ -4,7 +4,6 @@
 using namespace asyn;
 
 iterator::iterator(coroutine* co) : _coroutine(co) {
-    co->init();
     co->resume();
     _obj = co->get_value();
 

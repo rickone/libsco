@@ -30,7 +30,7 @@ public:
 
     static coroutine* self();
 
-    void init(size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
+    void make(size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
     void set_self();
     void swap(coroutine* co);
     bool resume();

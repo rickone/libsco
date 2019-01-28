@@ -34,19 +34,21 @@ void coroutine::body(coroutine* co) {
     co->_status = COROUTINE_DEAD;
 }
 
-void coroutine::init(size_t stack_len) {
+void coroutine::make(size_t stack_len) {
     if (_status != COROUTINE_UNINIT) {
         return;
     }
 
-    getcontext(&_ctx);
-
-    _stack = malloc(stack_len);
-    _ctx.uc_stack.ss_sp = _stack;
-    _ctx.uc_stack.ss_size = stack_len;
-    _ctx.uc_link = nullptr;
-
     if (_func) {
+        auto self = coroutine::self();
+
+        getcontext(&_ctx);
+
+        _stack = malloc(stack_len);
+        _ctx.uc_stack.ss_sp = _stack;
+        _ctx.uc_stack.ss_size = stack_len;
+        _ctx.uc_link = self ? &self->_ctx : nullptr;
+
         makecontext(&_ctx, (void (*)(void))&coroutine::body, 1, this);
         _status = COROUTINE_SUSPEND;
     } else {
@@ -69,7 +71,7 @@ void coroutine::swap(coroutine* co) {
 
 bool coroutine::resume() {
     if (_status == COROUTINE_UNINIT) {
-        init();
+        make();
     }
     
     if (_status != COROUTINE_SUSPEND) {

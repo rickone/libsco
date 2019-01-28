@@ -1,5 +1,5 @@
 #ifdef __linux__
-#define _GNU_SOURCE
+//#define _GNU_SOURCE
 #include <pthread.h>
 #endif
 #ifdef __APPLE__
@@ -28,7 +28,7 @@ static void make_context_key() {
 static void* work_routine(void* arg) {
     auto inst = (worker*)arg;
     coroutine co(nullptr);
-    co.init();
+    co.make();
     inst->on_thread(&co);
     return nullptr;
 }
@@ -51,7 +51,7 @@ void worker::bind_cpu_core(int cpu_core) {
         return;
     }
 
-    if (_thread == nullptr) {
+    if (!_thread) {
         _thread = pthread_self();
     }
 
@@ -74,8 +74,6 @@ void worker::bind_cpu_core(int cpu_core) {
         return;
     }
 #endif // __APPLE__
-
-    printf("thread(%p) bind to cpu_core: %d\n", _thread, cpu_core);
 }
 
 void worker::pause() {
@@ -132,7 +130,6 @@ void worker::on_step() {
             break;
         }
 
-        co->init();
         try {
             co->resume();
         } catch (std::exception& err) {
@@ -155,7 +152,7 @@ void worker::on_step() {
         _timeslice_ns += 1'000'000;
     } else {
         remain_ns = _timeslice_ns - ns;
-        _timeslice_ns = std::max(TIMESLICE_NANOSEC, ns);
+        _timeslice_ns = std::max((int64_t)TIMESLICE_NANOSEC, ns);
     }
 
     _poller.poll(remain_ns);

@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <mutex>
 
-static std::mutex s_mutex;
+static asyn::mutex s_mutex;
 static std::vector<int> s_result;
 
 bool is_prime(int n) {
