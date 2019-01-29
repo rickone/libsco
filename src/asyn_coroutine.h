@@ -66,8 +66,10 @@ private:
 
 template<typename... A>
 inline box::object resume(coroutine& co, A... args) {
-    if (co.status() != COROUTINE_SUSPEND)
+    int status = co.status();
+    if (status != COROUTINE_UNINIT && status != COROUTINE_SUSPEND) {
         return nullptr;
+    }
 
     co.set_value(args...);
     co.resume();
