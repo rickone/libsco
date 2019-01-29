@@ -30,7 +30,7 @@ static void make_context_key() {
 static void* work_routine(void* arg) {
     auto inst = (worker*)arg;
     coroutine co(nullptr);
-    co.init();
+    co.make();
     inst->on_thread(&co);
     return nullptr;
 }
@@ -132,7 +132,6 @@ void worker::on_step() {
             break;
         }
 
-        co->init();
         try {
             co->resume();
         } catch (std::exception& err) {

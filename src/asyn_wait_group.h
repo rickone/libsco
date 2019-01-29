@@ -7,7 +7,7 @@ namespace asyn {
 
 class wait_group {
 public:    
-    wait_group() = default;
+    wait_group();
     ~wait_group() = default;
     wait_group(const wait_group&) = delete;
     wait_group(wait_group&&) = delete;

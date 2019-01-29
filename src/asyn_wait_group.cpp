@@ -3,6 +3,9 @@
 
 using namespace asyn;
 
+wait_group::wait_group() : _count(0) {
+}
+
 void wait_group::start(const std::function<void ()>& f) {
     _count.fetch_add(1, std::memory_order_release);
     coroutine::func_t func = [f, this](){
@@ -37,6 +40,7 @@ void wait_group::wait() {
             return;
         }
 
+        printf("wg.count=%d\n", count);
         cur_worker->pause();
     }
 }

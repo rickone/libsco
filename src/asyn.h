@@ -51,7 +51,7 @@ inline void sleep_for(const std::chrono::duration<Rep, Period>& dtn) {
     nsleep(nsdtn.count());
 }
 
-void pause() {
+inline void pause() {
     auto cur_worker = worker::current();
     if (!cur_worker) {
         return;

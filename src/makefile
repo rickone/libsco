@@ -1,8 +1,8 @@
 Target  = libasyn.so
 Include = ../3rd/box/src
 Source  = $(shell find . -name "*.cpp")
-LibDir  =
-Lib     =
+LibDir  = ../3rd/box/lib
+Lib     = box
 ObjDir  = ../obj
 OutDir  = ../lib
 Define  = _XOPEN_SOURCE
