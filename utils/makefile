@@ -18,7 +18,7 @@ CFLAGS += $(Include:%=-I%) $(Define:%=-D%) -m64
 # Config: Debug/Release
 Config ?= Debug
 
-UnixName = $(shell uname)
+UnixName ?= $(shell uname)
 
 ifeq ($(Config),Release)
 CFLAGS += -O3 -march=native
@@ -34,7 +34,7 @@ Rpath = ./
 endif
 
 ifeq ($(suffix $(Target)),)
-Link = g++ -Wl,-rpath,$(Rpath) $(LibDir:%=-L%) $(Lib:%=-l%) $(LDFLAGS) -o $@ $^
+Link = g++ -Wl,-rpath,$(Rpath) $(LibDir:%=-L%) -o $@ $^ $(Lib:%=-l%) $(LDFLAGS)
 endif
 
 ifeq ($(suffix $(Target)),.so)

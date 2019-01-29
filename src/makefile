@@ -1,15 +1,20 @@
 Target  = libasyn.so
 Include = ../3rd/box/src
 Source  = $(shell find . -name "*.cpp")
-LibDir  = ../lib ../3rd/box/lib
-Lib     = box
+LibDir  =
+Lib     =
 ObjDir  = ../obj
 OutDir  = ../lib
 Define  = _XOPEN_SOURCE
 CFLAGS  =
 CXXFLAGS =
-LDFLAGS = -flat_namespace
+LDFLAGS =
 AfterBuild = cp $(shell find . -name "*.h") ../include
+
+UnixName = $(shell uname)
+ifeq ($(UnixName),Darwin)
+LDFLAGS += -flat_namespace
+endif
 
 $(shell mkdir -p ../include)
 

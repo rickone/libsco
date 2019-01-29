@@ -9,6 +9,7 @@
 
 using namespace asyn;
 
+#ifndef __linux__
 static bool add_nonblock(int fd) {
     int option = fcntl(fd, F_GETFL);
     if (option == -1) {
@@ -22,6 +23,7 @@ static bool add_nonblock(int fd) {
 
     return true;
 }
+#endif // __linux__
 
 sys_hook(socket)
 int socket(int domain, int type, int protocol) {
