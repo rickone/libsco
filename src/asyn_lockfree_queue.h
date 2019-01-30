@@ -8,11 +8,21 @@ template<typename T>
 class lockfree_queue {
 public:
     struct node_t {
-        node_t() = default;
-        node_t(const T& t) : value(t) {}
+        node_t() : refcnt(1) {
+        }
+        node_t(const T& t) : refcnt(2), value(t) {
+        }
         ~node_t() = default;
 
+        void release() {
+            int cnt = --refcnt;
+            if (cnt == 0) {
+                delete this;
+            }
+        }
+
         node_t* next = nullptr;
+        std::atomic<int> refcnt;
         T value;
     };
 
@@ -57,7 +67,9 @@ public:
         } while (!_head.compare_exchange_weak(node, next, std::memory_order_release, std::memory_order_consume));
 
         value = next->value;
-        delete node;
+        next->release();
+
+        node->release();
         return true;
     }
 

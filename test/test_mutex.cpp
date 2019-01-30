@@ -39,10 +39,12 @@ int main() {
 
     asyn::sleep_for(1s);
 
+    s_mutex.lock();
     puts("prime number:");
     for (int n : s_result) {
         printf("%d\n", n);
     }
+    s_mutex.unlock();
 
     return 0;
 }
