@@ -25,7 +25,7 @@ CFLAGS += -O3 -march=native
 else
 CFLAGS += -g -D_DEBUG -Wall
 	ifeq ($(UnixName),Linux)
-	CFLAGS += -rdynamic
+	LDFLAGS += -rdynamic
 	endif
 endif
 

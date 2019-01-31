@@ -4,6 +4,7 @@
 #include "asyn_mutex.h"
 #include "asyn_wait_group.h"
 #include "asyn_channel.h"
+#include "asyn_panic.h"
 
 namespace asyn {
 
@@ -62,6 +63,7 @@ inline void pause() {
 
 inline void quit(int code) {
     master::inst()->quit(code);
+    coroutine::self()->yield_return();
 }
 
 } // asyn

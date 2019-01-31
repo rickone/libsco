@@ -46,10 +46,6 @@ public:
         _val.store_args(args...);
     }
 
-    void move_value(box::object&& val) {
-        _val = std::move(val);
-    }
-
     int id() const { return _id; }
     int status() const { return _status; }
 

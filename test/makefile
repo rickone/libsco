@@ -1,4 +1,4 @@
-Target  = test
+Target  =
 Include = ../include ../3rd/box/src
 Source  = $(shell find . -name "*.cpp")
 LibDir  = ../lib ../3rd/box/lib
@@ -11,13 +11,13 @@ CXXFLAGS =
 LDFLAGS =
 Rpath = ../lib
 
-include ../utils/makefile
-
 Targets = $(basename $(Source))
 TargetBins = $(Targets:%=$(OutDir)/%)
 
-.PHONY: test
-test: start $(TargetBins)
+$(OutDir)/build_test.log: $(TargetBins)
+	@echo "Test build at `date`" > $@
+
+include ../utils/makefile
 
 $(OutDir)/%: $(ObjDirPath)/%.o
 	$(AfterCompile)

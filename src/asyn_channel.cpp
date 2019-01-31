@@ -1,5 +1,6 @@
 #include "asyn_channel.h"
 #include "asyn_worker.h"
+#include "asyn_panic.h"
 
 using namespace asyn;
 
@@ -15,8 +16,8 @@ box::object channel::recv_obj() {
 
 box::object channel::wait_obj() {
     auto cur_worker = worker::current();
-    if (!cur_worker) { // panic
-        return nullptr;
+    if (!cur_worker) {
+        panic("!cur_worker");
     }
 
     while (true) {

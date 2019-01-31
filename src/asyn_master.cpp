@@ -27,7 +27,6 @@ void master::enter() {
 void master::quit(int code) {
     _code = code;
     _startup = false;
-    coroutine::self()->yield_return();
 }
 
 void master::main() {

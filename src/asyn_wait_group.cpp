@@ -1,5 +1,6 @@
 #include "asyn_wait_group.h"
 #include "asyn_master.h"
+#include "asyn_panic.h"
 
 using namespace asyn;
 
@@ -30,8 +31,8 @@ void wait_group::done() {
 
 void wait_group::wait() {
     auto cur_worker = worker::current();
-    if (!cur_worker) { // panic
-        return;
+    if (!cur_worker) {
+        panic("!cur_worker");
     }
 
     while (true) {

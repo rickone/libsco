@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <cerrno>
 #include "asyn_worker.h"
+#include "asyn_panic.h"
 
 using namespace asyn;
 
@@ -154,13 +155,13 @@ void poller::poll(int64_t ns) {
 
 void poller::wait(int fd, int event_flag) {
     auto cur_worker = worker::current();
-    if (!cur_worker) { // panic
-        return;
+    if (!cur_worker) {
+        panic("!cur_worker");
     }
 
     auto co = cur_worker->co_self();
-    if (!co) { // panic
-        return;
+    if (!co) {
+        panic("!co");
     }
 
     add(fd, event_flag, co);

@@ -12,7 +12,7 @@ src: 3rd
 	$(MAKE) -C src
 
 test: src
-	cd test && make test
+	$(MAKE) -C test
 
 3rd:
 	$(MAKE) -C 3rd

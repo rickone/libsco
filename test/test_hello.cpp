@@ -10,8 +10,7 @@ void foo(int i) {
 int main() {
     for (int i = 0; i < 20; i++) {
         asyn::start(std::bind(foo, i));
+        asyn::sleep_for(10ms);
     }
-
-    asyn::sleep_for(1s);
     return 0;
 }

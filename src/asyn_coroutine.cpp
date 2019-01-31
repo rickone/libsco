@@ -3,6 +3,7 @@
 #include <cassert>
 #include "asyn_master.h"
 #include "asyn_worker.h"
+#include "asyn_panic.h"
 
 using namespace asyn;
 
@@ -39,21 +40,22 @@ void coroutine::make(size_t stack_len) {
         return;
     }
 
-    if (_func) {
-        auto self = coroutine::self();
-
-        getcontext(&_ctx);
-
-        _stack = malloc(stack_len);
-        _ctx.uc_stack.ss_sp = _stack;
-        _ctx.uc_stack.ss_size = stack_len;
-        _ctx.uc_link = self ? &self->_ctx : nullptr;
-
-        makecontext(&_ctx, (void (*)(void))&coroutine::body, 1, this);
-        _status = COROUTINE_SUSPEND;
-    } else {
+    if (!_func) {
         _status = COROUTINE_RUNNING;
+        return;
     }
+
+    auto self = coroutine::self();
+
+    getcontext(&_ctx);
+
+    _stack = malloc(stack_len);
+    _ctx.uc_stack.ss_sp = _stack;
+    _ctx.uc_stack.ss_size = stack_len;
+    _ctx.uc_link = self ? &self->_ctx : nullptr;
+
+    makecontext(&_ctx, (void (*)(void))&coroutine::body, 1, this);
+    _status = COROUTINE_SUSPEND;
 }
 
 void coroutine::set_self() {
@@ -80,7 +82,7 @@ bool coroutine::resume() {
 
     auto self = coroutine::self();
     if (!self) {
-        return false; // panic
+        panic("!self");
     }
 
     _ctx.uc_link = &self->_ctx;
@@ -92,7 +94,7 @@ bool coroutine::resume() {
 
 void coroutine::yield() {
     if (!_ctx.uc_link) {
-        return; // panic
+        panic("!_ctx.uc_link");
     }
 
     _status = COROUTINE_SUSPEND;
@@ -101,7 +103,7 @@ void coroutine::yield() {
 
 void coroutine::yield_return() {
     if (!_ctx.uc_link) {
-        return; // panic
+        panic("!_ctx.uc_link");
     }
 
     _status = COROUTINE_DEAD;
