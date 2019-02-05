@@ -169,6 +169,7 @@ void poller::wait(int fd, int event_flag) {
         _write_wait_cos.emplace(fd, co->shared_from_this());
     }
 
+    printf("poller::wait(%d, %d) co(%d)\n", fd, event_flag, co->id());
     co->yield();
 }
 
@@ -182,6 +183,7 @@ void poller::resume_read(int fd) {
     _read_wait_cos.erase(it);
 
     if (co) {
+        printf("poller::resume_read(%d) co(%d)\n", fd, co->id());
         co->resume();
     }
 }
@@ -196,6 +198,7 @@ void poller::resume_write(int fd) {
     _write_wait_cos.erase(it);
 
     if (co) {
+        printf("poller::resume_write(%d) co(%d)\n", fd, co->id());
         co->resume();
     }
 }

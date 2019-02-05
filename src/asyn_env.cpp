@@ -25,6 +25,11 @@ void env::init() {
         _dict.emplace(key, value);
         //printf("%s=%s\n", key.c_str(), value.c_str());
     }
+
+    int flat_ns = get_env_int("DYLD_FORCE_FLAT_NAMESPACE");
+    if (!flat_ns) {
+        fprintf(stderr, "DYLD_FORCE_FLAT_NAMESPACE not set!\n");
+    }
 }
 
 std::string env::get_env(const char* name) {

@@ -1,8 +1,8 @@
 Target  =
-Include = ../include ../3rd/box/src
+Include = ../include ../3rd/box/src ../3rd/hiredis
 Source  = $(shell find . -name "*.cpp")
 LibDir  = ../lib ../3rd/box/lib
-Lib     = asyn pthread dl box
+Lib     = asyn pthread dl box hiredis
 ObjDir  = ../obj
 OutDir  = ../bin
 Define  = _XOPEN_SOURCE
@@ -14,8 +14,8 @@ Rpath = ../lib
 Targets = $(basename $(Source))
 TargetBins = $(Targets:%=$(OutDir)/%)
 
-$(OutDir)/build_test.log: $(TargetBins)
-	@echo "Test build at `date`" > $@
+.PHONY: tests
+tests: $(TargetBins)
 
 include ../utils/makefile
 
