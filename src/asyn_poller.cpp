@@ -19,10 +19,10 @@ void poller::init() {
     _fd = epoll_create(1024);
 }
 
-void poller::add(int fd, int event_flag, coroutine* co) {
+void poller::add(int fd, int event_flag) {
     struct epoll_event event;
     event.events = EPOLLET;
-    event.data.ptr = co;
+    event.data.fd = fd;
 
     if (event_flag & EVENT_READ) {
         event.events |= EPOLLIN;
@@ -35,10 +35,10 @@ void poller::add(int fd, int event_flag, coroutine* co) {
     epoll_ctl(_fd, EPOLL_CTL_ADD, fd, &event);
 }
 
-void poller::set(int fd, int event_flag, coroutine* co) {
+void poller::set(int fd, int event_flag) {
     struct epoll_event event;
     event.events = EPOLLET;
-    event.data.ptr = co;
+    event.data.fd = fd;
 
     if (event_flag & EVENT_READ) {
         event.events |= EPOLLIN;
@@ -69,16 +69,14 @@ void poller::poll(int64_t ns) {
 
     for (int i = 0; i < event_cnt; ++i) {
         unsigned es = events[i].events;
-        int event_type = 0;
+        int fd = events[i].data.fd;
         if (es & EPOLLIN) {
-            event_type |= EVENT_READ;
+            resume_read(fd);
         }
+
         if (es & EPOLLOUT) {
-            event_type |= EVENT_WRITE;
+            resume_write(fd);
         }
-        auto co = (coroutine*)events[i].data.ptr;
-        co->set_value(event_type);
-        co->resume();
     }
 }
 #endif // __linux__
@@ -96,26 +94,28 @@ void poller::init() {
     _fd = kqueue();
 }
 
-void poller::add(int fd, int event_flag, coroutine* co) {
+void poller::add(int fd, int event_flag) {
     struct kevent events[2];
-    EV_SET(&events[0], fd, EVFILT_READ,  EV_ADD | ((event_flag & EVENT_READ) ? EV_ENABLE : EV_DISABLE), 0, 0, co);
-    EV_SET(&events[1], fd, EVFILT_WRITE, EV_ADD | ((event_flag & EVENT_WRITE) ? EV_ENABLE : EV_DISABLE), 0, 0, co);
+    void* udata = (void*)(intptr_t)fd;
+    EV_SET(&events[0], fd, EVFILT_READ,  EV_ADD | ((event_flag & EVENT_READ) ? EV_ENABLE : EV_DISABLE), 0, 0, udata);
+    EV_SET(&events[1], fd, EVFILT_WRITE, EV_ADD | ((event_flag & EVENT_WRITE) ? EV_ENABLE : EV_DISABLE), 0, 0, udata);
 
     kevent(_fd, &events[0], 2, nullptr, 0, nullptr);
 }
 
-void poller::set(int fd, int event_flag, coroutine* co) {
+void poller::set(int fd, int event_flag) {
     if (event_flag == EVENT_NONE) {
         remove(fd);
     } else {
-        add(fd, event_flag, co);
+        add(fd, event_flag);
     }
 }
 
 void poller::remove(int fd) {
-    struct kevent events[2]; 
-    EV_SET(&events[0], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
-    EV_SET(&events[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
+    struct kevent events[2];
+    void* udata = (void*)(intptr_t)-1;
+    EV_SET(&events[0], fd, EVFILT_READ, EV_DELETE, 0, 0, udata);
+    EV_SET(&events[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, udata);
 
     kevent(_fd, &events[0], 2, nullptr, 0, nullptr);
 }
@@ -138,16 +138,13 @@ void poller::poll(int64_t ns) {
 
     for (int i = 0; i < event_cnt; ++i) {
         unsigned filt = events[i].filter;
-        int event_type = 0;
-        if (filt == EVFILT_READ) {
-            event_type = EVENT_READ;
-        } else if (filt == EVFILT_WRITE) {
-            event_type = EVENT_WRITE;
-        }
+        int fd = (int)(intptr_t)events[i].udata;
 
-        auto co = (coroutine*)events[i].udata;
-        co->set_value(event_type);
-        co->resume();
+        if (filt == EVFILT_READ) {
+            resume_read(fd);
+        } else if (filt == EVFILT_WRITE) {
+            resume_write(fd);
+        }
     }
 }
 
@@ -164,7 +161,41 @@ void poller::wait(int fd, int event_flag) {
         panic("!co");
     }
 
-    add(fd, event_flag, co);
+    add(fd, event_flag);
+
+    if (event_flag & EVENT_READ) {
+        _read_wait_cos.emplace(fd, co->shared_from_this());
+    } else if (event_flag & EVENT_WRITE) {
+        _write_wait_cos.emplace(fd, co->shared_from_this());
+    }
+
     co->yield();
-    remove(fd);
+}
+
+void poller::resume_read(int fd) {
+    auto it = _read_wait_cos.find(fd);
+    if (it == _read_wait_cos.end()) {
+        return;
+    }
+
+    auto co = it->second;
+    _read_wait_cos.erase(it);
+
+    if (co) {
+        co->resume();
+    }
+}
+
+void poller::resume_write(int fd) {
+    auto it = _write_wait_cos.find(fd);
+    if (it == _write_wait_cos.end()) {
+        return;
+    }
+
+    auto co = it->second;
+    _write_wait_cos.erase(it);
+
+    if (co) {
+        co->resume();
+    }
 }
