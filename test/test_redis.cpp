@@ -13,6 +13,7 @@ int main() {
         } else {
             printf("Can't allocate redis context\n");
         }
+        return 1;
     }
 
     printf("redis connected to %s:%d\n", host, port);

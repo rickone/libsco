@@ -1,7 +1,7 @@
 Target  =
 Include = ../include ../3rd/box/src ../3rd/hiredis
 Source  = $(shell find . -name "*.cpp")
-LibDir  = ../lib ../3rd/box/lib
+LibDir  = ../lib ../3rd/box/lib ../3rd/hiredis
 Lib     = asyn pthread dl box hiredis
 ObjDir  = ../obj
 OutDir  = ../bin

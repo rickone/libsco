@@ -21,15 +21,17 @@ public:
 
     void init();
     void add(int fd, int event_flag);
-    void set(int fd, int event_flag);
-    void remove(int fd);
+    void remove(int fd, int event_flag);
     void poll(int64_t ns);
     void wait(int fd, int event_flag);
     void resume_read(int fd);
     void resume_write(int fd);
 
 private:
+    int get_event_flag(int fd);
+    
     int _fd = -1;
+    std::unordered_map<int, int> _fd_event_flags;
     std::unordered_map<int, std::shared_ptr<coroutine>> _read_wait_cos;
     std::unordered_map<int, std::shared_ptr<coroutine>> _write_wait_cos;
 };

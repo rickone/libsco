@@ -12,4 +12,4 @@ box/Makefile:
 	git submodule update --init
 
 hiredis:
-	$(MAKE) -C hiredis
+	cd hiredis && make && sudo make install

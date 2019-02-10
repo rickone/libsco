@@ -20,39 +20,62 @@ void poller::init() {
 }
 
 void poller::add(int fd, int event_flag) {
+    int old_event_flag = get_event_flag(fd);
+    int new_event_flag = old_event_flag | event_flag;
+
+    if (old_event_flag == new_event_flag) {
+        return;
+    }
+
     struct epoll_event event;
     event.events = EPOLLET;
     event.data.fd = fd;
 
-    if (event_flag & EVENT_READ) {
+    if (new_event_flag & EVENT_READ) {
         event.events |= EPOLLIN;
     }
 
-    if (event_flag & EVENT_WRITE) {
+    if (new_event_flag & EVENT_WRITE) {
         event.events |= EPOLLOUT;
     }
 
-    epoll_ctl(_fd, EPOLL_CTL_ADD, fd, &event);
+    if (old_event_flag == 0) {
+        epoll_ctl(_fd, EPOLL_CTL_ADD, fd, &event);        
+    } else {
+        epoll_ctl(_fd, EPOLL_CTL_MOD, fd, &event);
+    }
+
+    _fd_event_flags[fd] = new_event_flag;
 }
 
-void poller::set(int fd, int event_flag) {
+void poller::remove(int fd, int event_flag) {
+    int old_event_flag = get_event_flag(fd);
+    int new_event_flag = old_event_flag &~ event_flag;
+
+    if (old_event_flag == new_event_flag) {
+        return;
+    }
+
+    if (new_event_flag == 0) {
+        epoll_ctl(_fd, EPOLL_CTL_DEL, fd, nullptr);
+        _fd_event_flags.erase(fd);
+        return;
+    }
+
     struct epoll_event event;
     event.events = EPOLLET;
     event.data.fd = fd;
 
-    if (event_flag & EVENT_READ) {
+    if (new_event_flag & EVENT_READ) {
         event.events |= EPOLLIN;
     }
 
-    if (event_flag & EVENT_WRITE) {
+    if (new_event_flag & EVENT_WRITE) {
         event.events |= EPOLLOUT;
     }
 
     epoll_ctl(_fd, EPOLL_CTL_MOD, fd, &event);
-}
-
-void poller::remove(int fd) {
-    epoll_ctl(_fd, EPOLL_CTL_DEL, fd, nullptr);
+    _fd_event_flags[fd] = new_event_flag;
 }
 
 void poller::poll(int64_t ns) {
@@ -95,29 +118,47 @@ void poller::init() {
 }
 
 void poller::add(int fd, int event_flag) {
+    int old_event_flag = get_event_flag(fd);
+    int new_event_flag = old_event_flag | event_flag;
+
+    if (old_event_flag == new_event_flag) {
+        return;
+    }
+
     struct kevent events[2];
     void* udata = (void*)(intptr_t)fd;
-    EV_SET(&events[0], fd, EVFILT_READ,  EV_ADD | ((event_flag & EVENT_READ) ? EV_ENABLE : EV_DISABLE), 0, 0, udata);
-    EV_SET(&events[1], fd, EVFILT_WRITE, EV_ADD | ((event_flag & EVENT_WRITE) ? EV_ENABLE : EV_DISABLE), 0, 0, udata);
+    EV_SET(&events[0], fd, EVFILT_READ,  EV_ADD | ((new_event_flag & EVENT_READ) ? EV_ENABLE : EV_DISABLE), 0, 0, udata);
+    EV_SET(&events[1], fd, EVFILT_WRITE, EV_ADD | ((new_event_flag & EVENT_WRITE) ? EV_ENABLE : EV_DISABLE), 0, 0, udata);
 
     kevent(_fd, &events[0], 2, nullptr, 0, nullptr);
 }
 
-void poller::set(int fd, int event_flag) {
-    if (event_flag == EVENT_NONE) {
-        remove(fd);
-    } else {
-        add(fd, event_flag);
+void poller::remove(int fd, int event_flag) {
+    int old_event_flag = get_event_flag(fd);
+    int new_event_flag = old_event_flag | event_flag;
+
+    if (old_event_flag == new_event_flag) {
+        return;
     }
-}
 
-void poller::remove(int fd) {
+    if (new_event_flag == 0) {
+        struct kevent events[2];
+        void* udata = (void*)(intptr_t)-1;
+        EV_SET(&events[0], fd, EVFILT_READ, EV_DELETE, 0, 0, udata);
+        EV_SET(&events[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, udata);
+
+        kevent(_fd, &events[0], 2, nullptr, 0, nullptr);
+        _fd_event_flags.erase(fd);
+        return;
+    }
+
     struct kevent events[2];
-    void* udata = (void*)(intptr_t)-1;
-    EV_SET(&events[0], fd, EVFILT_READ, EV_DELETE, 0, 0, udata);
-    EV_SET(&events[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, udata);
+    void* udata = (void*)(intptr_t)fd;
+    EV_SET(&events[0], fd, EVFILT_READ,  EV_ADD | ((new_event_flag & EVENT_READ) ? EV_ENABLE : EV_DISABLE), 0, 0, udata);
+    EV_SET(&events[1], fd, EVFILT_WRITE, EV_ADD | ((new_event_flag & EVENT_WRITE) ? EV_ENABLE : EV_DISABLE), 0, 0, udata);
 
     kevent(_fd, &events[0], 2, nullptr, 0, nullptr);
+    _fd_event_flags[fd] = new_event_flag;
 }
 
 void poller::poll(int64_t ns) {
@@ -201,4 +242,12 @@ void poller::resume_write(int fd) {
         printf("poller::resume_write(%d) co(%d)\n", fd, co->id());
         co->resume();
     }
+}
+
+int poller::get_event_flag(int fd) {
+    auto it = _fd_event_flags.find(fd);
+    if (it == _fd_event_flags.end()) {
+        return 0;
+    }
+    return it->second;
 }

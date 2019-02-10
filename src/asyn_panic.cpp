@@ -1,4 +1,5 @@
 #include "asyn_panic.h"
+#include <cstdlib>
 #include <stdexcept>
 #include <execinfo.h>
 #include <cxxabi.h>
