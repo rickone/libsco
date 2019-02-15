@@ -1,6 +1,3 @@
 [submodule "3rd/box"]
 	path = 3rd/box
 	url = https://github.com/rickone/box.git
-[submodule "3rd/hiredis"]
-	path = 3rd/hiredis
-	url = https://github.com/redis/hiredis.git

@@ -1,6 +1,6 @@
-.PHONY: all clean src test 3rd
+.PHONY: all clean src 3rd example
 
-all: src test
+all: src
 
 clean:
 	rm -rf bin
@@ -11,11 +11,8 @@ clean:
 src: 3rd
 	$(MAKE) -C src
 
-test: src
-	$(MAKE) -C test
-
 3rd:
 	$(MAKE) -C 3rd
 
-inc:
-	cd src && make inc
+example: src
+	$(MAKE) -C example

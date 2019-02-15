@@ -1,8 +1,8 @@
 Target  =
-Include = ../include ../3rd/box/src ../3rd/hiredis
+Include = ../include ../3rd/box/src
 Source  = $(shell find . -name "*.cpp")
-LibDir  = ../lib ../3rd/box/lib ../3rd/hiredis
-Lib     = asyn pthread dl box hiredis
+LibDir  = ../lib ../3rd/box/lib
+Lib     = asyn pthread dl box
 ObjDir  = ../obj
 OutDir  = ../bin
 Define  = _XOPEN_SOURCE
@@ -14,8 +14,8 @@ Rpath = ../lib
 Targets = $(basename $(Source))
 TargetBins = $(Targets:%=$(OutDir)/%)
 
-.PHONY: tests
-tests: $(TargetBins)
+.PHONY: example
+example: $(TargetBins)
 
 include ../utils/makefile
 

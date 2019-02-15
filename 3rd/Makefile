@@ -1,6 +1,6 @@
-.PHONY: all clean box hiredis
+.PHONY: all clean box
 
-all: box hiredis
+all: box
 
 clean:
 	$(MAKE) -C box clean
@@ -10,6 +10,3 @@ box: box/Makefile
 
 box/Makefile:
 	git submodule update --init
-
-hiredis:
-	cd hiredis && make && sudo make install

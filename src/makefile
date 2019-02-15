@@ -1,5 +1,5 @@
 Target  = libasyn.so
-Include = ../3rd/box/src
+Include = ../3rd/box/src $(shell find . -type d)
 Source  = $(shell find . -name "*.cpp")
 LibDir  = ../3rd/box/lib
 Lib     = box
