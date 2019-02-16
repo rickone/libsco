@@ -11,8 +11,7 @@
 
 namespace asyn {
 
-#define MIN_CO_COUNT 16
-#define TIMESLICE_NANOSEC 10'000'000ll
+#define REQUEST_CO_COUNT 8
 
 class worker {
 public:
@@ -21,13 +20,11 @@ public:
 
     static worker* current();
 
-    void run();
+    void run(coroutine* self = nullptr);
+    void run_in_thread();
     void join();
     void bind_cpu_core(int cpu_core);
     void pause();
-    void on_thread(coroutine* self);
-    void on_step();
-    void process_paused_coroutines();
 
     coroutine* co_self() { return _self; }
     void set_co_self(coroutine* self) { _self = self; }
@@ -35,14 +32,17 @@ public:
     poller* poller_inst() { return &_poller; }
 
 private:
+    void process_new_coroutines();
+    void process_dead_coroutines();
+    void process_paused_coroutines();
+
     pthread_t _thread = (pthread_t)0;
     coroutine* _self = nullptr;
     timer _timer;
     poller _poller;
     std::list<std::shared_ptr<coroutine>> _coroutines;
     std::unordered_map<int, std::shared_ptr<coroutine>> _paused_coroutines;
-    int _max_co_count = 0;
-    int64_t _timeslice_ns = 0;
+    int _request_co_count = 0;
 };
 
 } // asyn

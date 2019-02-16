@@ -40,6 +40,8 @@ inline auto start(const F& f) {
     return start_impl(f, typename std::is_void<decltype(f())>::type());
 }
 
+void nsleep(int64_t ns);
+
 template <class Rep, class Period>
 inline void sleep_for(const std::chrono::duration<Rep, Period>& dtn) {
     auto nsdtn = std::chrono::duration_cast<std::chrono::nanoseconds>(dtn);

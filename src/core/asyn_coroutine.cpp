@@ -116,3 +116,7 @@ iterator coroutine::begin() {
 iterator coroutine::end() {
     return iterator();
 }
+
+void coroutine::on_timer() {
+    resume();
+}

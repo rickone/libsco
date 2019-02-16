@@ -4,6 +4,7 @@
 #include <memory>
 #include <ucontext.h>
 #include "box.h"
+#include "asyn_timer.h"
 #include "asyn_iterator.h"
 
 namespace asyn {
@@ -17,7 +18,7 @@ enum {
     COROUTINE_DEAD,
 };
 
-class coroutine : public std::enable_shared_from_this<coroutine> {
+class coroutine : public std::enable_shared_from_this<coroutine>, public timer::trigger {
 public:
     typedef std::function<void(void)> func_t;
     
@@ -38,6 +39,8 @@ public:
     void yield_break();
     iterator begin();
     iterator end();
+
+    virtual void on_timer() override;
 
     box::object get_value() { return std::move(_val); }
 

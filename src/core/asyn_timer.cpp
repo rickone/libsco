@@ -1,39 +1,35 @@
 #include "asyn_timer.h"
-#include "asyn_worker.h"
 
 using namespace asyn;
 
-void timer::sleep(int64_t ns, coroutine* co) {
+void timer::add_trigger(int64_t ns, trigger* trigger) {
     auto tp = std::chrono::steady_clock::now() + std::chrono::nanoseconds(ns);
-    _skiplist.create(tp, co);
+    _skiplist.create(tp, trigger);
 }
 
-void timer::tick() {
+int64_t timer::tick() {
     auto tp = std::chrono::steady_clock::now();
 
     unsigned int n = _skiplist.upper_rank(tp);
     if (n == 0) {
-        return;
+        return MIN_TRIGGER_NANO_SECONDS;
     }
 
     auto node = _skiplist.remove(0, n);
     while (node) {
         auto next = node->forward(0);
-        auto co = node->get_value();
-        co->resume();
+        auto trigger = node->get_value();
+        trigger->on_timer();
 
         node->purge();
         node = next;
     }
-}
 
-void asyn::nsleep(int64_t ns) {
-    auto worker = worker::current();
-    auto self = worker->co_self();
-    worker->timer_inst()->sleep(ns, self);
+    auto first_node = _skiplist.first_node();
+    if (!first_node) {
+        return MIN_TRIGGER_NANO_SECONDS;
+    }
 
-#ifdef ASYN_DEBUG
-    printf("[ASYN] coroutine(%d) nsleep, ns=%lld\n", self->id(), ns);
-#endif
-    self->yield();
+    auto next_tick_tp = first_node->get_key();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(next_tick_tp - tp).count();
 }

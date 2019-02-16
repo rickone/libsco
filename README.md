@@ -16,7 +16,7 @@ ASYN_WORKER_NUM
 
 ASYN_BIND_CPU_CORE
 
-=1将把从0到CPU_NUM的线程绑定到对应CPU核。
+=on将把从0到CPU_NUM的线程绑定到对应CPU核。
 默认不绑定
 
 # Hello World
@@ -123,8 +123,7 @@ int main() {
     return 0;
 }
 ```
-asyn::wait_group对象可以等待多个协程全部执行结束，它只能创建无返回值的协程，全部从它这里start的协程全部执行结束后，wait()会返回。多
-个协程需要访问的临界区需要用asyn::mutex保护，类似pthread_mutex或者std::mutex，但不是在线程上加锁，而是在协程上加锁。
+asyn::wait_group对象可以等待多个协程全部执行结束，它只能创建无返回值的协程，全部从它这里start的协程全部执行结束后，wait()会返回。多个协程需要访问的临界区需要用asyn::mutex加锁，类似pthread_mutex或者std::mutex，但不是在线程上加锁，而是在协程上加锁。
 
 # 同步Coroutine
 ``` C++
@@ -136,7 +135,7 @@ void foo() {
         asyn::yield("yeah", i);
 
         if (i == 5) {
-            asyn::yield_return("asyn", 100);
+            asyn::yield_break("asyn", 100);
         }
     }
 }
@@ -151,7 +150,7 @@ int main() {
 	return 0;
 }
 ```
-asyn::start会创建协程并异步执行，你还可以同步的方式在当前协程直接执行一个asyn::coroutine对象并用asyn::resume()调度它，在协程内你可以使用asyn::yield()返回一些值并暂停，或者asyn::yield_return中止协程调用。
+asyn::start会创建协程并异步执行，你还可以同步的方式在当前协程直接执行一个asyn::coroutine对象并用asyn::resume()调度它，在协程内你可以使用asyn::yield()返回一些值并暂停，或者asyn::yield_break中止协程调用。
 
 # 枚举器
 ``` C++
@@ -194,7 +193,7 @@ void foo(int start, int n) {
 void test() {
     for (int i = 0; i < 10; ++i) {
         if (i == 5) {
-            asyn::yield_return(100);
+            asyn::yield_break(100);
         }
 
         asyn::yield(i * i);
@@ -217,7 +216,7 @@ int main() {
     return 0;
 }
 ```
-同步协程本身就是一个枚举器，它有定义begin()和end()，可以对它进行遍历，得到结果是协程中不断asyn::yield()出来的值。
+同步协程本身就是一个枚举器，它有定义begin()和end()，可以对它进行遍历，得到结果是协程中不断asyn::yield()出来的值，asyn::yield_break()执行完后会终止当前协程。(用法类似C#的yield break)
 
 # TODO
 1 异常处理

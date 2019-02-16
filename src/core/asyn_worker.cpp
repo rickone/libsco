@@ -28,10 +28,7 @@ static void make_context_key() {
 }
 
 static void* work_routine(void* arg) {
-    auto inst = (worker*)arg;
-    coroutine co(nullptr);
-    co.init();
-    inst->on_thread(&co);
+    ((worker*)arg)->run();
     return nullptr;
 }
 
@@ -40,7 +37,34 @@ worker* worker::current() {
     return (worker*)pthread_getspecific(s_context_key);
 }
 
-void worker::run() {
+void worker::run(coroutine* self) {
+    std::shared_ptr<coroutine> co;
+
+    if (!self) {
+        co = std::make_shared<coroutine>(nullptr);
+        co->init();
+        self = co.get();
+    }
+    _self = self;
+
+    _poller.init();
+    _request_co_count = REQUEST_CO_COUNT;
+
+    pthread_once(&s_context_once, make_context_key);
+    pthread_setspecific(s_context_key, this);
+
+    master* master = master::inst();
+    while (master->is_startup()) {
+        process_new_coroutines();
+        process_dead_coroutines();
+        process_paused_coroutines();
+
+        int64_t next_tick_ns = _timer.tick();
+        _poller.poll(next_tick_ns);
+    }
+}
+
+void worker::run_in_thread() {
     pthread_create(&_thread, nullptr, work_routine, this);
 }
 
@@ -94,25 +118,32 @@ void worker::pause() {
     _self->yield();
 }
 
-void worker::on_thread(coroutine* self) {
-    _self = self;
-    _poller.init();
+void worker::process_new_coroutines() {
+    auto master = master::inst();
+    int count = 0;
+    for (; count < _request_co_count; count++) {
+        auto co = master->pop_coroutine();
+        if (!co) {
+            break;
+        }
 
-    pthread_once(&s_context_once, make_context_key);
-    pthread_setspecific(s_context_key, this);
-    _max_co_count = MIN_CO_COUNT;
-    _timeslice_ns = TIMESLICE_NANOSEC;
+        try {
+            co->resume();
+        } catch (std::exception& err) {
+            fprintf(stderr, "[ASYN] coroutine(%d) resume error: %s\n", co->id(), err.what());
+        }
+        
+        _coroutines.push_back(co);
+    }
 
-    master* mast = master::inst();
-    while (mast->is_startup()) {
-        on_step();
+    if (count == _request_co_count) {
+        _request_co_count = _request_co_count * 2;
+    } else {
+        _request_co_count = std::max(REQUEST_CO_COUNT, _request_co_count / 2);
     }
 }
 
-void worker::on_step() {
-    auto mast = master::inst();
-    auto tp_begin = std::chrono::steady_clock::now();
-
+void worker::process_dead_coroutines() {
     auto it = _coroutines.begin();
     auto it_end = _coroutines.end();
     while (it != it_end) {
@@ -123,45 +154,6 @@ void worker::on_step() {
             ++it;
         }
     }
-
-    process_paused_coroutines();
-
-    _timer.tick();
-
-    int co_count = 0;
-    for (; co_count < _max_co_count; co_count++) {
-        auto co = mast->pop_coroutine();
-        if (!co) {
-            break;
-        }
-
-        try {
-            co->resume();
-        } catch (std::exception& err) {
-            fprintf(stderr, "Error: %s\n", err.what());
-        }
-        
-        _coroutines.push_back(co);
-    }
-
-    if (co_count == _max_co_count) {
-        _max_co_count = _max_co_count * 4;
-    } else {
-        _max_co_count = std::max(MIN_CO_COUNT, _max_co_count / 2);
-    }
-
-    auto tp = std::chrono::steady_clock::now();
-    int64_t ns = std::chrono::duration_cast<std::chrono::nanoseconds>(tp - tp_begin).count();
-    int64_t remain_ns = 0;
-    if (_timeslice_ns < ns) {
-        _timeslice_ns += 1'000'000;
-    } else {
-        remain_ns = _timeslice_ns - ns;
-        _timeslice_ns = std::max((int64_t)TIMESLICE_NANOSEC, ns);
-    }
-
-    _poller.poll(remain_ns);
-    //printf("co=%d, rn=%lld\n", _max_co_count, remain_ns);
 }
 
 void worker::process_paused_coroutines() {

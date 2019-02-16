@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <unistd.h> // usleep
 #include <time.h>
-#include "asyn_master.h"
+#include "asyn.h"
 
 using namespace asyn;
 

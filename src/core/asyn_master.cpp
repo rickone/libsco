@@ -51,7 +51,7 @@ void master::main() {
 
     _startup = true;
     for (int i = 1; i < worker_num; i++) {
-        workers[i]->run();
+        workers[i]->run_in_thread();
     }
 
     bool bind_cpu_core = env->get_env_bool("ASYN_BIND_CPU_CORE");
@@ -61,7 +61,7 @@ void master::main() {
         }
     }
 
-    workers[0]->on_thread(&_master_co);
+    workers[0]->run(&_master_co);
 
     for (int i = 1; i < worker_num; i++) {
         workers[i]->join();
