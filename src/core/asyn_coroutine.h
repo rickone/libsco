@@ -30,12 +30,12 @@ public:
 
     static coroutine* self();
 
-    void make(size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
+    void init(size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
     void set_self();
     void swap(coroutine* co);
     bool resume();
     void yield();
-    void yield_return();
+    void yield_break();
     iterator begin();
     iterator end();
 
@@ -81,10 +81,10 @@ inline box::object yield(A... args) {
 }
 
 template<typename... A>
-inline void yield_return(A... args) {
+inline void yield_break(A... args) {
     auto self = coroutine::self();
     self->set_value(args...);
-    self->yield_return();
+    self->yield_break();
 }
 
 } // asyn

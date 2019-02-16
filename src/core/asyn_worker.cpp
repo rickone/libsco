@@ -30,7 +30,7 @@ static void make_context_key() {
 static void* work_routine(void* arg) {
     auto inst = (worker*)arg;
     coroutine co(nullptr);
-    co.make();
+    co.init();
     inst->on_thread(&co);
     return nullptr;
 }
@@ -88,6 +88,9 @@ void worker::pause() {
         return;
     }
 
+#ifdef ASYN_DEBUG
+    printf("[ASYN] coroutine(%d) pause\n", _self->id());
+#endif
     _self->yield();
 }
 

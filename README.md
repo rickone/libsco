@@ -42,7 +42,7 @@ int main() {
 ```
 引入asyn库后，main函数过程将变身为主协程，主协程退出后进程会退出。main的返回值将会被忽略，使用asyn::quit(code)在需要指定退出码的时候，否则main函数退出进程返回0。
 
-asyn::start()启动一个异步协程并执行，当前协程继续执行。为了不让main退出，使用asyn::sleep_for()等待1秒，你还可以使用std::this_thread::sleep_for, sleep, usleep, nanosleep，他们都被替换成asyn::sleep_for，效果是一样的。见test/test_sleep.cpp
+asyn::start()启动一个异步协程并执行，当前协程继续执行。为了不让main退出，使用asyn::sleep_for()等待1秒，你还可以使用std::this_thread::sleep_for, sleep, usleep, nanosleep，他们都被替换成asyn::sleep_for，效果是一样的。见example/example03_sleep.cpp
 
 # Wait 最基本的同步
 ``` C++

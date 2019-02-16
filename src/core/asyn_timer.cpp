@@ -31,5 +31,9 @@ void asyn::nsleep(int64_t ns) {
     auto worker = worker::current();
     auto self = worker->co_self();
     worker->timer_inst()->sleep(ns, self);
+
+#ifdef ASYN_DEBUG
+    printf("[ASYN] coroutine(%d) nsleep, ns=%lld\n", self->id(), ns);
+#endif
     self->yield();
 }

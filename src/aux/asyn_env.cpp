@@ -1,6 +1,7 @@
 #include "asyn_env.h"
 #include <unistd.h>
 #include <cstring>
+#include <algorithm>
 
 using namespace asyn;
 
@@ -12,7 +13,6 @@ env* env::inst() {
 extern char** environ;
 
 void env::init() {
-    //puts("env=");
     for (char** env = environ; *env; env++) {
         char* p = strstr(*env, "=");
         if (!p) {
@@ -23,7 +23,6 @@ void env::init() {
         std::string key(*env, len);
         std::string value(*env + len + 1);
         _dict.emplace(key, value);
-        //printf("%s=%s\n", key.c_str(), value.c_str());
     }
 
     int flat_ns = get_env_int("DYLD_FORCE_FLAT_NAMESPACE");
@@ -48,4 +47,15 @@ int env::get_env_int(const char* name) {
     }
 
     return std::stoi(value, nullptr);
+}
+
+bool env::get_env_bool(const char* name) {
+    auto value = get_env(name);
+
+    std::transform(value.begin(), value.end(), value.begin(), std::tolower);
+    if (value == "" || value == "0" || value == "off" || value == "false") {
+        return false;
+    }
+
+    return true;
 }

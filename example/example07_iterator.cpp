@@ -37,7 +37,7 @@ void foo(int start, int n) {
 void test() {
     for (int i = 0; i < 10; ++i) {
         if (i == 5) {
-            asyn::yield_return(100);
+            asyn::yield_break(100);
         }
 
         asyn::yield(i * i);

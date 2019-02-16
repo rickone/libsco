@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <atomic>
+#include "asyn_master.h"
 
 namespace asyn {
 
@@ -14,10 +15,18 @@ public:
     wait_group& operator=(const wait_group&) = delete;
     wait_group& operator=(wait_group&&) = delete;
 
-    void start(const std::function<void ()>& f);
-    void start(void (*f)());
     void done();
     void wait();
+
+    template<typename F>
+    void start(const F& f) {
+        _count.fetch_add(1, std::memory_order_release);
+        coroutine::func_t func = [f, this](){
+            f();
+            done();
+        };
+        master::inst()->start_coroutine(func);
+    }
 
 private:
     std::atomic<int> _count;

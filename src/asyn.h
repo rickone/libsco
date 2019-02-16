@@ -1,5 +1,6 @@
 #pragma once
 
+#include <type_traits>
 #include "asyn_master.h"
 #include "asyn_mutex.h"
 #include "asyn_wait_group.h"
@@ -16,34 +17,27 @@ public:
 
 extern guard g_guard_inst;
 
-inline void start(const std::function<void ()>& f) {
-    master::inst()->start_coroutine(f);
-}
-
-inline void start(void (*f)()) {
-    master::inst()->start_coroutine(f);
-}
-
-template<typename R>
-inline std::shared_ptr<channel> start(const std::function<R ()>& f) {
+template<typename F, typename C>
+inline std::shared_ptr<channel> start_impl(const F& f, C&&) {
     auto ch = std::make_shared<channel>();
     coroutine::func_t func = [f, ch](){
-        R r = f();
+        auto r = f();
         ch->send(r);
     };
     master::inst()->start_coroutine(func);
     return ch;
 }
 
-template<typename R>
-inline std::shared_ptr<channel> start(R (*f)()) {
-    auto ch = std::make_shared<channel>();
-    coroutine::func_t func = [f, ch](){
-        R r = f();
-        ch->send(r);
-    };
+template<typename F>
+inline std::shared_ptr<channel> start_impl(const F& f, std::true_type&&) {
+    coroutine::func_t func = f;
     master::inst()->start_coroutine(func);
-    return ch;
+    return nullptr;
+}
+
+template<typename F>
+inline auto start(const F& f) {
+    return start_impl(f, typename std::is_void<decltype(f())>::type());
 }
 
 template <class Rep, class Period>
@@ -63,7 +57,7 @@ inline void pause() {
 
 inline void quit(int code) {
     master::inst()->quit(code);
-    coroutine::self()->yield_return();
+    coroutine::self()->yield_break();
 }
 
 } // asyn

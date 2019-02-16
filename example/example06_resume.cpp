@@ -6,7 +6,7 @@ void foo() {
         asyn::yield("yeah", i);
 
         if (i == 5) {
-            asyn::yield_return("asyn", 100);
+            asyn::yield_break("asyn", 100);
         }
     }
 }

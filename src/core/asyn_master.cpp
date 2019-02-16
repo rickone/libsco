@@ -20,7 +20,7 @@ master* master::inst() {
 void master::enter() {
     auto co = start_coroutine(nullptr);
 
-    _master_co.make();
+    _master_co.init();
     co->swap(&_master_co);
 }
 
@@ -54,11 +54,11 @@ void master::main() {
         workers[i]->run();
     }
 
-    int bind_cpu_core = env->get_env_int("ASYN_BIND_CPU_CORE");
-    if (bind_cpu_core > 0) {
+    bool bind_cpu_core = env->get_env_bool("ASYN_BIND_CPU_CORE");
+    if (bind_cpu_core) {
         for (int i = 0; i < worker_num && i < cpu_num; i++) {
             workers[i]->bind_cpu_core(i);
-        }        
+        }
     }
 
     workers[0]->on_thread(&_master_co);

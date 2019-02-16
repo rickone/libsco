@@ -15,6 +15,7 @@ public:
     void init();
     std::string get_env(const char* name);
     int get_env_int(const char* name);
+    bool get_env_bool(const char* name);
 
 private:
     std::unordered_map<std::string, std::string> _dict;
