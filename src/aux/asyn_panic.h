@@ -4,6 +4,6 @@
 
 namespace asyn {
 
-void panic(const std::string& what);
+void panic(const char *fmt, ...);
 
 } // asyn

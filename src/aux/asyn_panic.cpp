@@ -4,7 +4,14 @@
 #include <execinfo.h>
 #include <cxxabi.h>
 
-void asyn::panic(const std::string& what) {
+void asyn::panic(const char *fmt, ...) {
+    va_list args;
+    char err_info[512];
+
+    va_start(args, fmt);
+    vsnprintf(err_info, sizeof(err_info), fmt, args);
+    va_end(args);
+
     size_t size = 1024;
     void** buffer = (void**)malloc(size * sizeof(void*));
     int bt_num = backtrace(buffer, size);
@@ -16,7 +23,7 @@ void asyn::panic(const std::string& what) {
     }
 
     std::string info("panic: '");
-    info.append(what);
+    info.append(err_info);
     info.append("' backtrace:");
 
     for (int i = 0; i < bt_num; ++i) {

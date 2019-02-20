@@ -33,6 +33,6 @@ void mutex::unlock() {
 
     int self_cid = self->id();
     if (!_cid.compare_exchange_weak(self_cid, 0)) {
-        panic("!_cid.compare_exchange_weak");
+        panic("!_cid.compare_exchange_weak(%d, 0)", self_cid);
     }
 }

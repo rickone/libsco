@@ -40,9 +40,7 @@ public:
         close();
         _handler = dlopen(str_name.c_str(), RTLD_LAZY);
         if (!_handler) {
-            std::string info("!_handler : ");
-            info.append(dlerror());
-            panic(info);
+            panic("dlopen('%s') failed: %s", str_name.c_str(), dlerror());
         }
     }
 
@@ -53,9 +51,7 @@ public:
 
         _addr = dlsym(_handler, funcname);
         if (!_addr) {
-            std::string info("!_addr : ");
-            info.append(dlerror());
-            panic(info);
+            panic("dlsym('%s') failed: %s", funcname, dlerror());
         }
     }
 
@@ -66,9 +62,7 @@ public:
 
         _addr = dlsym(RTLD_NEXT, funcname);
         if (!_addr) {
-            std::string info("!_addr : ");
-            info.append(dlerror());
-            panic(info);
+            panic("dlsym(RTLD_NEXT, '%s') failed: %s", funcname, dlerror());
         }
         printf("RTLD_NEXT %s\n", funcname);
 

@@ -26,7 +26,6 @@ private:
     int _code = 0;
     std::atomic<bool> _startup;
     lockfree_queue<std::shared_ptr<coroutine>> _coroutines;
-    worker _workers[5];
     coroutine _master_co;
 };
 
