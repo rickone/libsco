@@ -1,10 +1,11 @@
 #include "asyn_panic.h"
 #include <cstdlib>
-#include <stdexcept>
+#include <cerrno>
+#include <cstring>
 #include <execinfo.h>
 #include <cxxabi.h>
 
-void asyn::panic(const char *fmt, ...) {
+std::string asyn::backtrace(const char *fmt, ...) {
     va_list args;
     char err_info[512];
 
@@ -14,12 +15,12 @@ void asyn::panic(const char *fmt, ...) {
 
     size_t size = 1024;
     void** buffer = (void**)malloc(size * sizeof(void*));
-    int bt_num = backtrace(buffer, size);
+    int bt_num = ::backtrace(buffer, size);
 
     char** bt_sym = backtrace_symbols(buffer, bt_num);
     if (bt_sym == nullptr) {
         free(buffer);
-        return;
+        return "backtrace_symbols fail";
     }
 
     std::string info("panic: '");
@@ -76,5 +77,9 @@ void asyn::panic(const char *fmt, ...) {
     free(buffer);
     free(bt_sym);
 
-    throw std::runtime_error(info);
+    return info;
+}
+
+std::string asyn::backtrace_system(const char *name) {
+    return backtrace("system error: %d - %s", errno, std::strerror(errno));
 }

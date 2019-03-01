@@ -23,7 +23,7 @@ public:
     typedef std::function<void(void)> func_t;
     
     explicit coroutine(const func_t& func);
-    ~coroutine();
+    virtual ~coroutine();
     coroutine(const coroutine&) = delete;
     coroutine(coroutine&&) = delete;
     coroutine& operator=(const coroutine&) = delete;

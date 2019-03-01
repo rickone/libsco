@@ -17,6 +17,9 @@ poller::~poller() {
 
 void poller::init() {
     _fd = epoll_create(1024);
+    if (_fd < 0) {
+        panic_system("epoll_create");
+    }
 }
 
 void poller::add(int fd, int event_flag) {
@@ -86,7 +89,7 @@ void poller::poll(int64_t ns) {
         if (errno == EINTR)
             return;
 
-        perror("epoll_wait");
+        panic_system("epoll_wait");
         return;
     }
 
@@ -115,6 +118,9 @@ poller::~poller() {
 
 void poller::init() {
     _fd = kqueue();
+    if (_fd < 0) {
+        panic_system("kqueue");
+    }
 }
 
 void poller::add(int fd, int event_flag) {
@@ -173,7 +179,7 @@ void poller::poll(int64_t ns) {
         if (errno == EINTR)
             return;
 
-        perror("kevent");
+        panic_system("kevent");
         return;
     }
 

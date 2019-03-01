@@ -87,7 +87,7 @@ void worker::bind_cpu_core(int cpu_core) {
     CPU_SET(cpu_core, &cpu_info);
 
     if (pthread_setaffinity_np(_thread, sizeof(cpu_set_t), &cpu_info)) {
-        perror("pthread_setaffinity_np");
+        panic_system("pthread_setaffinity_np");
         return;
     }
 #endif // __linux__
@@ -96,7 +96,7 @@ void worker::bind_cpu_core(int cpu_core) {
     thread_affinity_policy_data_t policy = { cpu_core };
     thread_port_t mach_thread = pthread_mach_thread_np(_thread);
     if (thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1)) {
-        perror("thread_policy_set");
+        panic_system("thread_policy_set");
         return;
     }
 #endif // __APPLE__

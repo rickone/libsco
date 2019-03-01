@@ -103,7 +103,7 @@ int accept(int listenfd, struct sockaddr* addr, socklen_t* addrlen) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_READ);
+    cur_worker->poller_inst()->wait(listenfd, EVENT_READ);
     return accept_nonblock(listenfd, addr, addrlen);
 }
 
