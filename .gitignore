@@ -1,4 +1,2 @@
-bin/
-obj/
-lib/
-include/
+build/
+3rd/box/

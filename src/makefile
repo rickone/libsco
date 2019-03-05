@@ -1,21 +1,16 @@
 Target  = libasyn.so
-Include = ../3rd/box/src $(shell find . -type d)
+Include = $(shell find . -type d)
 Source  = $(shell find . -name "*.cpp")
-LibDir  = ../3rd/box/lib
 Lib     = box
-ObjDir  = ../obj
-OutDir  = ../lib
+ExportHeader = $(shell find . -name "*.h")
 Define  = _XOPEN_SOURCE ASYN_DEBUG
 CFLAGS  =
-CXXFLAGS =
+CXXFLAGS = -std=c++14
 LDFLAGS =
-AfterBuild = cp $(shell find . -name "*.h") ../include
 
 UnixName = $(shell uname)
 ifeq ($(UnixName),Darwin)
 LDFLAGS += -flat_namespace
 endif
-
-$(shell mkdir -p ../include)
 
 include ../utils/makefile

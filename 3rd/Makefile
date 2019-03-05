@@ -9,4 +9,4 @@ box: box/Makefile
 	$(MAKE) -C box
 
 box/Makefile:
-	git submodule update --init
+	git clone https://github.com/rickone/box.git

@@ -1,26 +1,23 @@
-Target  =
-Include = ../include ../3rd/box/src
+Target  = example
 Source  = $(shell find . -name "*.cpp")
-LibDir  = ../lib ../3rd/box/lib
-Lib     = asyn pthread dl box
-ObjDir  = ../obj
-OutDir  = ../bin
+Lib     = asyn box
+ExportHeader =
 Define  = _XOPEN_SOURCE
 CFLAGS  =
-CXXFLAGS =
-LDFLAGS =
-Rpath = ../lib
+CXXFLAGS = -std=c++14
+LDFLAGS = -lpthread -ldl
 
-Targets = $(basename $(Source))
-TargetBins = $(Targets:%=$(OutDir)/%)
+.PHONY: example bins
 
-.PHONY: example
-example: $(TargetBins)
+example: bins
 
 include ../utils/makefile
 
-$(OutDir)/%: $(ObjDirPath)/%.o
-	$(AfterCompile)
+Targets = $(basename $(Source))
+TargetBins = $(Targets:%=$(OutputPath)/%)
+
+bins: $(TargetBins)
+
+$(OutputPath)/%: $(ObjectPath)/%.o
 	@echo Link $@ ...
 	@$(Link)
-	$(AfterBuild)

@@ -1,11 +1,12 @@
+#Package = pkg
+#BuildPath = ../build
 #Target  = appserver
 #Include = ../lua ../common
 #Source	= main.cpp
-#LibDir	= ../lib
 #Lib 	= lua common
-#ObjDir	= ../obj
-#OutDir	= ../bin
-#Define 	=
+#ExportHeader =
+
+#Define =
 #CFLAGS	=
 #CXXFLAGS =
 #LDFLAGS =
@@ -13,56 +14,89 @@
 
 #CC = cc
 #CXX = c++
-CFLAGS += $(Include:%=-I%) $(Define:%=-D%) -m64
 
 # Config: Debug/Release
 Config ?= Debug
-
 UnixName ?= $(shell uname)
+BuildPath ?= ../build
+ifeq ($(Package),)
+	Package = $(notdir $(shell cd .. && pwd))
+endif
 
+# TargetExt "", ".a", ".so"
+TargetExt = $(suffix $(Target))
+
+# OutputPath, TargetName & TargetFile
+ifeq ($(TargetExt),)
+	OutputPath = $(BuildPath)/bin
+	TargetName = $(Target)
+	TargetFile = $(OutputPath)/$(Package)_$(Target)
+endif
+ifeq ($(TargetExt),.a)
+	OutputPath = $(BuildPath)/lib
+	TargetName = $(patsubst lib%.a,%,$(Target))
+	TargetFile += $(OutputPath)/$(Target)
+endif
+ifeq ($(TargetExt),.so)
+	OutputPath = $(BuildPath)/lib
+	TargetName = $(patsubst lib%.so,%,$(Target))
+	TargetFile += $(OutputPath)/$(Target)
+endif
+
+# Include & Define
+Include += $(Lib:%=$(BuildPath)/include/%)
+CFLAGS += $(Include:%=-I%) $(Define:%=-D%) -m64
+
+# Library
+LibraryPath = -L$(BuildPath)/lib
+Library = $(Lib:%=-l%)
+
+# ObjectPath
+ObjectPath = $(BuildPath)/obj/$(Package)/$(TargetName)
+
+# ExportHeaderPath
+ExportHeaderPath = $(BuildPath)/include/$(Package)
+
+# Config
 ifeq ($(Config),Release)
-CFLAGS += -O3 -march=native
+	CFLAGS += -O3 -march=native
 else
-CFLAGS += -g -D_DEBUG -Wall
+	CFLAGS += -g -D_DEBUG -Wall
 	ifeq ($(UnixName),Linux)
-	LDFLAGS += -rdynamic
+		LDFLAGS += -rdynamic
 	endif
 endif
 
-ifeq ($(Rpath),)
-Rpath = ./
+# Link
+ifeq ($(TargetExt),)
+	ifeq ($(Rpath),)
+		Rpath = ../lib
+	endif
+
+	Link = g++ -Wl,-rpath,$(Rpath) $(LibraryPath) -o $@ $^ $(Library) $(LDFLAGS)
 endif
 
-ifeq ($(suffix $(Target)),)
-Link = g++ -Wl,-rpath,$(Rpath) $(LibDir:%=-L%) -o $@ $^ $(Lib:%=-l%) $(LDFLAGS)
+ifeq ($(TargetExt),.so)
+	Shared = -shared
+	ifeq ($(UnixName),Darwin)
+		Shared = -dynamiclib -install_name @rpath/$(Target)
+	endif
+	CFLAGS += -fPIC
+	Link = g++ $(Shared) $(LibraryPath) $(Library) $(LDFLAGS) -o $@ $^
 endif
 
-ifeq ($(suffix $(Target)),.so)
-
-Shared = -shared
-ifeq ($(UnixName),Darwin)
-Shared = -dynamiclib -install_name @rpath/$(Target)
-endif
-CFLAGS += -fPIC
-Link = g++ $(Shared) $(LibDir:%=-L%) $(Lib:%=-l%) $(LDFLAGS) -o $@ $^
-
+ifeq ($(TargetExt),.a)
+	CFLAGS += -fPIC
+	Link = ar cr $@ $^
 endif
 
-ifeq ($(suffix $(Target)),.a)
-CFLAGS += -fPIC
-Link = ar cr $@ $^
-endif
-
-CXXFLAGS += $(CFLAGS) -std=c++14
-
-TargetPath = $(OutDir)/$(Target)
-ObjDirPath = $(ObjDir)/$(basename $(Target))
+CXXFLAGS += $(CFLAGS)
 
 Obj = $(addsuffix .o,$(basename $(Source)))
 Dep = $(addsuffix .d,$(basename $(Source)))
 
-SourceDir = $(dir $(Source))
-$(shell mkdir -p $(OutDir) $(ObjDirPath) $(SourceDir:%=$(ObjDirPath)/%))
+SourcePath = $(dir $(Source))
+$(shell mkdir -p $(OutputPath) $(SourcePath:%=$(ObjectPath)/%))
 
 define info
 	@echo ">>>> $(UnixName).make:" $(Target) [$(Config)]
@@ -72,35 +106,35 @@ define info
 	@echo "<<<<"
 endef
 
-.PHONY: all start clean end
-all: start $(TargetPath) end
+.PHONY: all test clean
+all: test $(TargetFile) $(ExportHeaderPath)
 
 clean:
-	rm -rf $(ObjDirPath)
+	rm -rf $(ObjectPath)
 
-start:
+test:
 	$(info)
 
-end:
-	$(AfterBuild)
-
-$(TargetPath): $(Obj:%=$(ObjDirPath)/%)
+$(TargetFile): $(Obj:%=$(ObjectPath)/%)
 	$(AfterCompile)
 	@echo Link $@ ...
 	@$(Link)
 
--include $(Dep:%=$(ObjDirPath)/%)
+-include $(Dep:%=$(ObjectPath)/%)
 
-$(ObjDirPath)/%.o: %.c
+$(ObjectPath)/%.o: %.c
 	@echo CC $< ...
 	@$(CC) $(CFLAGS) -o $@ -c $<
 
-$(ObjDirPath)/%.o: %.cpp
+$(ObjectPath)/%.o: %.cpp
 	@echo CXX $< ...
 	@$(CXX) $(CXXFLAGS) -o $@ -c $<
 
-$(ObjDirPath)/%.d: %.c
+$(ObjectPath)/%.d: %.c
 	@$(CC) -MM $(CFLAGS) $< -MT $(@:%.d=%.o) -MT $@ > $@
 
-$(ObjDirPath)/%.d: %.cpp
+$(ObjectPath)/%.d: %.cpp
 	@$(CXX) -MM $(CXXFLAGS) $< -MT $(@:%.d=%.o) -MT $@ > $@
+
+$(ExportHeaderPath): $(ExportHeader)
+	if [ "$^" != "" ]; then mkdir -p $@ && cp $^ $@; fi
