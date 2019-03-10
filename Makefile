@@ -1,17 +1,13 @@
-.PHONY: all clean src 3rd example
+.PHONY: all clean src example
 
-BuildPath ?= $(shell pwd)/build
-
-all: src
+all: src example
 
 clean:
-	rm -rf $(BuildPath)
+	$(MAKE) clean -C src
+	$(MAKE) clean -C example
 
-src: 3rd
+src:
 	$(MAKE) -C src
-
-3rd:
-	$(MAKE) -C 3rd BuildPath=$(BuildPath)
 
 example: src
 	$(MAKE) -C example

@@ -1,23 +1,13 @@
-Target  = example
-Source  = $(shell find . -name "*.cpp")
+Package =
+Target  = test
+Source  = $(wildcard *.cpp)
 Lib     = asyn box
 ExportHeader =
+Include =
 Define  = _XOPEN_SOURCE
 CFLAGS  =
 CXXFLAGS = -std=c++14
 LDFLAGS = -lpthread -ldl
+Rpath =
 
-.PHONY: example bins
-
-example: bins
-
-include ../utils/makefile
-
-Targets = $(basename $(Source))
-TargetBins = $(Targets:%=$(OutputPath)/%)
-
-bins: $(TargetBins)
-
-$(OutputPath)/%: $(ObjectPath)/%.o
-	@echo Link $@ ...
-	@$(Link)
+include /usr/local/etc/cmk
