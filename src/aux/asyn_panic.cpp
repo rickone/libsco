@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cerrno>
 #include <cstring>
+#include <cstdarg>
 #include <execinfo.h>
 #include <cxxabi.h>
 

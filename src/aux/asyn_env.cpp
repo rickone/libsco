@@ -1,7 +1,6 @@
 #include "asyn_env.h"
 #include <unistd.h>
 #include <cstring>
-#include <algorithm>
 
 using namespace asyn;
 
@@ -52,7 +51,13 @@ int env::get_env_int(const char* name) {
 bool env::get_env_bool(const char* name) {
     auto value = get_env(name);
 
-    std::transform(value.begin(), value.end(), value.begin(), std::tolower);
+    auto it = value.begin();
+    auto it_end = value.end();
+    while (it != it_end) {
+        *it = (char)std::tolower(*it);
+        ++it;
+    }
+
     if (value == "" || value == "0" || value == "off" || value == "false") {
         return false;
     }
