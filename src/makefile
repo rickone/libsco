@@ -15,4 +15,4 @@ ifeq ($(UnixName),Darwin)
 	LDFLAGS += -flat_namespace
 endif
 
-include /usr/local/etc/cmk
+include $(CPKG_PATH)/cmk

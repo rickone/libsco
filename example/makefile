@@ -10,4 +10,4 @@ CXXFLAGS = -std=c++14
 LDFLAGS = -lpthread -ldl
 Rpath =
 
-include /usr/local/etc/cmk
+include $(CPKG_PATH)/cmk
