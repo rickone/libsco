@@ -1,11 +1,12 @@
 Package =
-Target  = libasyn.so
-Source  = $(shell find . -name "*.cpp")
-Lib     = box
-ExportHeader = $(shell find . -name "*.h")
-Include = $(shell find . -type d)
-Define  = _XOPEN_SOURCE ASYN_DEBUG
-CFLAGS  =
+TargetType = so
+#Test = 1
+Source = $(wildcard *.cpp core/*.cpp aux/*.cpp hook/*.cpp)
+Import = box
+ExportHeader = $(wildcard *.h core/*.h aux/*.h)
+Include = . core aux
+Define = _XOPEN_SOURCE ASYN_DEBUG
+CFLAGS =
 CXXFLAGS = -std=c++14
 LDFLAGS =
 Rpath =
