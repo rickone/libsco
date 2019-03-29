@@ -1,12 +1,10 @@
-Package =
-TargetType = so
-#Test = 1
-Source = $(wildcard *.cpp core/*.cpp aux/*.cpp hook/*.cpp)
-Import = box
-ExportHeader = $(wildcard *.h core/*.h aux/*.h)
-Include = . core aux
+Target = libasyn.so
+Source = $(wildcard *.cpp *.c)
+Lib = box
+LibPath =
+Include =
 Define = _XOPEN_SOURCE ASYN_DEBUG
-CFLAGS =
+CFLAGS = -g -D_DEBUG -Wall
 CXXFLAGS = -std=c++14
 LDFLAGS =
 Rpath =
@@ -16,4 +14,4 @@ ifeq ($(UnixName),Darwin)
 	LDFLAGS += -flat_namespace
 endif
 
-include $(CPKG_PATH)/cmk
+include $(CUTILS_PATH)/template.cmk

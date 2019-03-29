@@ -1,13 +1,12 @@
-.PHONY: all clean src example
+.PHONY: all clean src test
 
-all: src example
+all: src test
 
 clean:
-	$(MAKE) clean -C src
-	$(MAKE) clean -C example
+	rm -rf bin lib obj
 
 src:
-	$(MAKE) -C src
+	cd src && Dep=0 cmk
 
-example: src
-	$(MAKE) -C example
+test: src
+	cd test && Dep=0 cmk
