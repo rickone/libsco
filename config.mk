@@ -1,5 +1,6 @@
 Target = libasyn.so
-Source = $(wildcard *.cpp *.c)
+Source = $(wildcard src/*.cpp src/*.c)
+Test = $(wildcard test/*.cpp test/*.c)
 Lib = box
 LibPath =
 Include =
@@ -13,5 +14,3 @@ UnixName = $(shell uname)
 ifeq ($(UnixName),Darwin)
 	LDFLAGS += -flat_namespace
 endif
-
-include $(CUTILS_PATH)/template.cmk
