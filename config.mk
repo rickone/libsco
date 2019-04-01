@@ -7,7 +7,7 @@ Include =
 Define = _XOPEN_SOURCE ASYN_DEBUG
 CFLAGS = -g -D_DEBUG -Wall
 CXXFLAGS = -std=c++14
-LDFLAGS =
+LDFLAGS = -lpthread -ldl
 Rpath =
 
 UnixName = $(shell uname)
