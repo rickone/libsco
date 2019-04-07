@@ -18,7 +18,8 @@ public:
     timer() = default;
     ~timer() = default;
 
-    void add_trigger(int64_t ns, trigger* trigger);
+    void add_trigger(const time_point& tp, trigger* trigger);
+    void remove_trigger(const time_point& tp, trigger* trigger);
     int64_t tick();
 
 private:

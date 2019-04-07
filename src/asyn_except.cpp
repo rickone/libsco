@@ -1,7 +1,5 @@
-#include "asyn_panic.h"
+#include "asyn_except.h"
 #include <cstdlib>
-#include <cerrno>
-#include <cstring>
 #include <cstdarg>
 #include <execinfo.h>
 #include <cxxabi.h>
@@ -24,9 +22,9 @@ std::string asyn::backtrace(const char *fmt, ...) {
         return "backtrace_symbols fail";
     }
 
-    std::string info("panic: '");
+    std::string info;
     info.append(err_info);
-    info.append("' backtrace:");
+    info.append(" backtrace:");
 
     for (int i = 0; i < bt_num; ++i) {
         char* name_begin = 0;
@@ -79,8 +77,4 @@ std::string asyn::backtrace(const char *fmt, ...) {
     free(bt_sym);
 
     return info;
-}
-
-std::string asyn::backtrace_system(const char *name) {
-    return backtrace("system error: %d - %s", errno, std::strerror(errno));
 }

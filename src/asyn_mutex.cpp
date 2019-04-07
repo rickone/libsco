@@ -1,19 +1,15 @@
 #include "asyn_mutex.h"
 #include "asyn_worker.h"
-#include "asyn_panic.h"
+#include "asyn_except.h"
 
 using namespace asyn;
 
 void mutex::lock() {
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
-        panic("!cur_worker");
-    }
+    auto worker = worker::current();
+    runtime_assert(worker, "");
 
-    auto self = cur_worker->co_self();
-    if (!self) {
-        panic("!self");
-    }
+    auto self = worker->co_self();
+    runtime_assert(self, "");
 
     while (true) {
         int nil = 0;
@@ -21,18 +17,15 @@ void mutex::lock() {
             return;
         }
 
-        cur_worker->pause();
+        worker->pause();
     }
 }
 
 void mutex::unlock() {
     auto self = coroutine::self();
-    if (!self) {
-        panic("!self");
-    }
+    runtime_assert(self, "");
 
     int self_cid = self->id();
-    if (!_cid.compare_exchange_weak(self_cid, 0)) {
-        panic("!_cid.compare_exchange_weak(%d, 0)", self_cid);
-    }
+    bool succ = _cid.compare_exchange_weak(self_cid, 0);
+    runtime_assert(succ, "self_cid=%d", self_cid);
 }

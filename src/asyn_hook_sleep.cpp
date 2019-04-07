@@ -12,8 +12,7 @@ unsigned int sleep(unsigned int seconds) {
         return sys_org(sleep)(seconds);
     }
 
-    int64_t ns = seconds * 1'000'000'000;
-    asyn::nsleep(ns);
+    asyn::sleep_for(std::chrono::seconds(seconds));
     return 0;
 }
 
@@ -23,8 +22,7 @@ int usleep(useconds_t usec) {
         return sys_org(usleep)(usec);
     }
 
-    int64_t ns = usec * 1'000;
-    asyn::nsleep(ns);
+    asyn::sleep_for(std::chrono::microseconds(usec));
     return 0;
 }
 
@@ -35,6 +33,6 @@ int nanosleep(const struct timespec *req, struct timespec *rem) {
     }
 
     int64_t ns = (int64_t)req->tv_sec * 1'000'000'000 + req->tv_nsec;
-    asyn::nsleep(ns);
+    asyn::sleep_for(std::chrono::nanoseconds(ns));
     return 0;
 }

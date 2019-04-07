@@ -50,8 +50,8 @@ int socket(int domain, int type, int protocol) {
 
 sys_hook(connect)
 int connect(int fd, const struct sockaddr* addr, socklen_t addrlen) {
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return sys_org(connect)(fd, addr, addrlen);
     }
 
@@ -64,7 +64,7 @@ int connect(int fd, const struct sockaddr* addr, socklen_t addrlen) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_WRITE);
+    worker->poller_inst()->wait(fd, EVENT_WRITE);
     return 0;
 }
 
@@ -89,8 +89,8 @@ static int accept_nonblock(int listenfd, struct sockaddr* addr, socklen_t* addrl
 }
 
 int accept(int listenfd, struct sockaddr* addr, socklen_t* addrlen) {
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return sys_org(accept)(listenfd, addr, addrlen);
     }
 
@@ -103,7 +103,7 @@ int accept(int listenfd, struct sockaddr* addr, socklen_t* addrlen) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(listenfd, EVENT_READ);
+    worker->poller_inst()->wait(listenfd, EVENT_READ);
     return accept_nonblock(listenfd, addr, addrlen);
 }
 
@@ -118,12 +118,12 @@ ssize_t recv(int fd, void* data, size_t len, int flags) {
         return -1;
     }
 
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_READ);
+    worker->poller_inst()->wait(fd, EVENT_READ);
     return sys_org(recv)(fd, data, len, flags);
 }
 
@@ -138,12 +138,12 @@ ssize_t recvfrom(int fd, void* data, size_t len, int flags, struct sockaddr* add
         return -1;
     }
 
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_READ);
+    worker->poller_inst()->wait(fd, EVENT_READ);
     return sys_org(recvfrom)(fd, data, len, flags, addr, addrlen);
 }
 
@@ -158,12 +158,12 @@ ssize_t recvmsg(int fd, struct msghdr* msg, int flags) {
         return -1;
     }
 
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_READ);
+    worker->poller_inst()->wait(fd, EVENT_READ);
     return sys_org(recvmsg)(fd, msg, flags);
 }
 
@@ -178,12 +178,12 @@ ssize_t send(int fd, const void* data, size_t len, int flags) {
         return -1;
     }
 
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_WRITE);
+    worker->poller_inst()->wait(fd, EVENT_WRITE);
     return sys_org(send)(fd, data, len, flags);
 }
 
@@ -198,12 +198,12 @@ ssize_t sendto(int fd, const void* data, size_t len, int flags, const struct soc
         return -1;
     }
 
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_WRITE);
+    worker->poller_inst()->wait(fd, EVENT_WRITE);
     return sys_org(sendto)(fd, data, len, flags, addr, addrlen);
 }
 
@@ -218,12 +218,12 @@ ssize_t sendmsg(int fd, const struct msghdr* msg, int flags) {
         return -1;
     }
 
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_WRITE);
+    worker->poller_inst()->wait(fd, EVENT_WRITE);
     return sys_org(sendmsg)(fd, msg, flags);
 }
 
@@ -238,12 +238,12 @@ ssize_t pread(int fd, void* data, size_t len, off_t offset) {
         return -1;
     }
 
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_READ);
+    worker->poller_inst()->wait(fd, EVENT_READ);
     return sys_org(pread)(fd, data, len, offset);
 }
 
@@ -258,12 +258,12 @@ ssize_t read(int fd, void* data, size_t len) {
         return -1;
     }
 
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_READ);
+    worker->poller_inst()->wait(fd, EVENT_READ);
     return sys_org(read)(fd, data, len);
 }
 
@@ -278,12 +278,12 @@ ssize_t readv(int fd, const struct iovec* iov, int iovcnt) {
         return -1;
     }
 
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_READ);
+    worker->poller_inst()->wait(fd, EVENT_READ);
     return sys_org(readv)(fd, iov, iovcnt);
 }
 
@@ -298,12 +298,12 @@ ssize_t pwrite(int fd, const void* data, size_t len, off_t offset) {
         return -1;
     }
 
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_WRITE);
+    worker->poller_inst()->wait(fd, EVENT_WRITE);
     return sys_org(pwrite)(fd, data, len, offset);
 }
 
@@ -318,12 +318,12 @@ ssize_t write(int fd, const void* data, size_t len) {
         return -1;
     }
 
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_WRITE);
+    worker->poller_inst()->wait(fd, EVENT_WRITE);
     return sys_org(write)(fd, data, len);
 }
 
@@ -338,11 +338,11 @@ ssize_t writev(int fd, const struct iovec* iov, int iovcnt) {
         return -1;
     }
 
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return -1;
     }
 
-    cur_worker->poller_inst()->wait(fd, EVENT_WRITE);
+    worker->poller_inst()->wait(fd, EVENT_WRITE);
     return sys_org(writev)(fd, iov, iovcnt);
 }

@@ -4,7 +4,7 @@ Test = $(wildcard test/*.cpp test/*.c)
 Lib = box
 LibPath =
 Include =
-Define = _XOPEN_SOURCE ASYN_DEBUG
+Define = _XOPEN_SOURCE
 CFLAGS = -g -D_DEBUG -Wall
 CXXFLAGS = -std=c++14
 LDFLAGS = -lpthread -ldl

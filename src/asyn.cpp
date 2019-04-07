@@ -12,13 +12,13 @@ guard::~guard() {
     master::inst()->quit();
 }
 
-void asyn::nsleep(int64_t ns) {
+void asyn::sleep_until(const std::chrono::steady_clock::time_point& tp) {
     auto worker = worker::current();
-    auto self = worker->co_self();
-    worker->timer_inst()->add_trigger(ns, self);
+    runtime_assert(worker, "");
 
-#ifdef ASYN_DEBUG
-    printf("[ASYN] coroutine(%d) nsleep, ns=%lld\n", self->id(), ns);
-#endif
+    auto self = worker->co_self();
+    runtime_assert(self, "");
+
+    worker->timer_inst()->add_trigger(tp, self);
     self->yield();
 }

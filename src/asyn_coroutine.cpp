@@ -3,7 +3,7 @@
 #include <cassert>
 #include "asyn_master.h"
 #include "asyn_worker.h"
-#include "asyn_panic.h"
+#include "asyn_except.h"
 
 using namespace asyn;
 
@@ -19,11 +19,11 @@ coroutine::~coroutine() {
 }
 
 coroutine* coroutine::self() {
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return nullptr;
     }
-    return cur_worker->co_self();
+    return worker->co_self();
 }
 
 void coroutine::body(coroutine* co) {
@@ -58,9 +58,9 @@ void coroutine::init(size_t stack_len) {
 }
 
 void coroutine::set_self() {
-    auto cur_worker = worker::current();
-    if (cur_worker) {
-        cur_worker->set_co_self(this);
+    auto worker = worker::current();
+    if (worker) {
+        worker->set_co_self(this);
     }
 }
 
@@ -80,9 +80,7 @@ bool coroutine::resume() {
     }
 
     auto self = coroutine::self();
-    if (!self) {
-        panic("!self");
-    }
+    runtime_assert(self, "");
 
     _ctx.uc_link = &self->_ctx;
     set_self();
@@ -92,18 +90,14 @@ bool coroutine::resume() {
 }
 
 void coroutine::yield() {
-    if (!_ctx.uc_link) {
-        panic("!_ctx.uc_link");
-    }
+    runtime_assert(_ctx.uc_link, "");
 
     _status = COROUTINE_SUSPEND;
     swapcontext(&_ctx, _ctx.uc_link);
 }
 
 void coroutine::yield_break() {
-    if (!_ctx.uc_link) {
-        panic("!_ctx.uc_link");
-    }
+    runtime_assert(_ctx.uc_link, "");
 
     _status = COROUTINE_DEAD;
     swapcontext(&_ctx, _ctx.uc_link);

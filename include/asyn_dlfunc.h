@@ -3,7 +3,7 @@
 #include <dlfcn.h>
 #include <string>
 #include <functional>
-#include "asyn_panic.h"
+#include "asyn_except.h"
 
 namespace asyn {
 
@@ -39,20 +39,14 @@ public:
 
         close();
         _handler = dlopen(str_name.c_str(), RTLD_LAZY);
-        if (!_handler) {
-            panic("dlopen('%s') failed: %s", str_name.c_str(), dlerror());
-        }
+        runtime_assert(_handler, "dlopen('%s') failed: %s", str_name.c_str(), dlerror());
     }
 
     void sym(const char* funcname) {
-        if (!_handler) {
-            panic("!_handler");
-        }
+        runtime_assert(_handler, "");
 
         _addr = dlsym(_handler, funcname);
-        if (!_addr) {
-            panic("dlsym('%s') failed: %s", funcname, dlerror());
-        }
+        runtime_assert(_addr, "dlsym('%s') failed: %s", funcname, dlerror());
     }
 
     dlfunc& next(const char* funcname) {
@@ -61,11 +55,9 @@ public:
         }
 
         _addr = dlsym(RTLD_NEXT, funcname);
-        if (!_addr) {
-            panic("dlsym(RTLD_NEXT, '%s') failed: %s", funcname, dlerror());
-        }
-        printf("RTLD_NEXT %s\n", funcname);
+        runtime_assert(_addr, "dlsym(RTLD_NEXT, '%s') failed: %s", funcname, dlerror());
 
+        printf("RTLD_NEXT %s\n", funcname);
         return *this;
     }
 

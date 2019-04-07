@@ -15,7 +15,7 @@
 #include "asyn_coroutine.h"
 #include "asyn_timer.h"
 #include "asyn_poller.h"
-#include "asyn_panic.h"
+#include "asyn_except.h"
 
 using namespace asyn;
 using namespace std::chrono_literals;
@@ -86,19 +86,15 @@ void worker::bind_cpu_core(int cpu_core) {
     CPU_ZERO(&cpu_info);
     CPU_SET(cpu_core, &cpu_info);
 
-    if (pthread_setaffinity_np(_thread, sizeof(cpu_set_t), &cpu_info)) {
-        panic_system("pthread_setaffinity_np");
-        return;
-    }
+    int ret = pthread_setaffinity_np(_thread, sizeof(cpu_set_t), &cpu_info);
+    runtime_assert_std(ret == 0, "pthread_setaffinity_np");
 #endif // __linux__
 
 #ifdef __APPLE__
     thread_affinity_policy_data_t policy = { cpu_core };
     thread_port_t mach_thread = pthread_mach_thread_np(_thread);
-    if (thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1)) {
-        panic_system("thread_policy_set");
-        return;
-    }
+    int ret = thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
+    runtime_assert_std(ret == 0, "thread_policy_set");
 #endif // __APPLE__
 }
 

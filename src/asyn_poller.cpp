@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <cerrno>
 #include "asyn_worker.h"
-#include "asyn_panic.h"
+#include "asyn_except.h"
 
 using namespace asyn;
 
@@ -17,9 +17,7 @@ poller::~poller() {
 
 void poller::init() {
     _fd = epoll_create(1024);
-    if (_fd < 0) {
-        panic_system("epoll_create");
-    }
+    runtime_assert_std(_fd >= 0, "epoll_create");
 }
 
 void poller::add(int fd, int event_flag) {
@@ -89,7 +87,7 @@ void poller::poll(int64_t ns) {
         if (errno == EINTR)
             return;
 
-        panic_system("epoll_wait");
+        runtime_throw_std("epoll_wait");
         return;
     }
 
@@ -118,9 +116,7 @@ poller::~poller() {
 
 void poller::init() {
     _fd = kqueue();
-    if (_fd < 0) {
-        panic_system("kqueue");
-    }
+    runtime_assert_std(_fd >= 0, "kqueue");
 }
 
 void poller::add(int fd, int event_flag) {
@@ -179,7 +175,7 @@ void poller::poll(int64_t ns) {
         if (errno == EINTR)
             return;
 
-        panic_system("kevent");
+        runtime_throw_std("kevent");
         return;
     }
 
@@ -198,15 +194,11 @@ void poller::poll(int64_t ns) {
 #endif // __APPLE__
 
 void poller::wait(int fd, int event_flag) {
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
-        panic("!cur_worker");
-    }
+    auto worker = worker::current();
+    runtime_assert(worker, "");
 
-    auto co = cur_worker->co_self();
-    if (!co) {
-        panic("!co");
-    }
+    auto co = worker->co_self();
+    runtime_assert(co, "");
 
     add(fd, event_flag);
 

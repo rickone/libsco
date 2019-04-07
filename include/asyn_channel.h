@@ -2,13 +2,14 @@
 
 #include "box.h"
 #include "asyn_lockfree_queue.h"
+#include "asyn_timer.h"
 
 namespace asyn {
 
-class channel {
+class channel : public timer::trigger{
 public:
     channel() = default;
-    ~channel() = default;
+    virtual ~channel() = default;
     channel(const channel&) = delete;
     channel(channel&&) = delete;
     channel& operator=(const channel&) = delete;
@@ -16,6 +17,9 @@ public:
     void send_obj(const box::object& obj);
     box::object recv_obj();
     box::object wait_obj();
+    bool wait_obj_until(const std::chrono::steady_clock::time_point& tp, box::object& obj);
+
+    virtual void on_timer() override;
 
     template<typename T>
     void send(T val) {
@@ -38,10 +42,27 @@ public:
     T wait() {
         auto obj = wait_obj();
         return obj.load<T>();
-    }    
+    }
+
+    template <typename T>
+    bool wait_until(const std::chrono::steady_clock::time_point& tp, T& val) {
+        box::object obj;
+        if (wait_obj_until(tp, obj)) {
+            val = obj.load<T>();
+            return true;
+        }
+        return false;
+    }
+
+    template <typename T, class Rep, class Period>
+    bool wait_for(const std::chrono::duration<Rep, Period>& dtn, T& val) {
+        auto tp = std::chrono::steady_clock::now() + dtn;
+        return wait_until(tp, val);
+    }
 
 private:
     lockfree_queue<box::object> _queue;
+    bool _timeout = false;
 };
 
 } // asyn

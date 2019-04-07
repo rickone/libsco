@@ -1,5 +1,5 @@
 #include "asyn_wait_group.h"
-#include "asyn_panic.h"
+#include "asyn_except.h"
 
 using namespace asyn;
 
@@ -11,10 +11,8 @@ void wait_group::done() {
 }
 
 void wait_group::wait() {
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
-        panic("!cur_worker");
-    }
+    auto worker = worker::current();
+    runtime_assert(worker, "");
 
     while (true) {
         int count = _count.load(std::memory_order_consume);
@@ -23,6 +21,6 @@ void wait_group::wait() {
         }
 
         printf("wg.count=%d\n", count);
-        cur_worker->pause();
+        worker->pause();
     }
 }

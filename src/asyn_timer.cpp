@@ -2,9 +2,24 @@
 
 using namespace asyn;
 
-void timer::add_trigger(int64_t ns, trigger* trigger) {
-    auto tp = std::chrono::steady_clock::now() + std::chrono::nanoseconds(ns);
+void timer::add_trigger(const time_point& tp, trigger* trigger) {
     _skiplist.create(tp, trigger);
+}
+
+void timer::remove_trigger(const time_point& tp, trigger* trigger) {
+    auto node = _skiplist.lower_bound(tp);
+    while (node) {
+        if (node->get_key() != tp) {
+            break;
+        }
+
+        if (node->get_value() == trigger) {
+            node->set_value(nullptr);
+            break;
+        }
+
+        node = node->forward(0);
+    }
 }
 
 int64_t timer::tick() {
@@ -19,7 +34,10 @@ int64_t timer::tick() {
     while (node) {
         auto next = node->forward(0);
         auto trigger = node->get_value();
-        trigger->on_timer();
+
+        if (trigger) {
+            trigger->on_timer();
+        }
 
         node->purge();
         node = next;

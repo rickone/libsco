@@ -5,7 +5,7 @@
 #include "asyn_mutex.h"
 #include "asyn_wait_group.h"
 #include "asyn_channel.h"
-#include "asyn_panic.h"
+#include "asyn_except.h"
 
 namespace asyn {
 
@@ -40,21 +40,21 @@ inline auto start(const F& f) {
     return start_impl(f, typename std::is_void<decltype(f())>::type());
 }
 
-void nsleep(int64_t ns);
+void sleep_until(const std::chrono::steady_clock::time_point& tp);
 
 template <class Rep, class Period>
 inline void sleep_for(const std::chrono::duration<Rep, Period>& dtn) {
-    auto nsdtn = std::chrono::duration_cast<std::chrono::nanoseconds>(dtn);
-    nsleep(nsdtn.count());
+    auto tp = std::chrono::steady_clock::now() + dtn;
+    sleep_until(tp);
 }
 
 inline void pause() {
-    auto cur_worker = worker::current();
-    if (!cur_worker) {
+    auto worker = worker::current();
+    if (!worker) {
         return;
     }
 
-    cur_worker->pause();
+    worker->pause();
 }
 
 inline void quit(int code) {
