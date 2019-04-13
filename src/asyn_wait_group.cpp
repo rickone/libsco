@@ -20,7 +20,6 @@ void wait_group::wait() {
             return;
         }
 
-        printf("wg.count=%d\n", count);
         worker->pause();
     }
 }

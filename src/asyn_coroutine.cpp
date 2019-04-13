@@ -111,6 +111,7 @@ iterator coroutine::end() {
     return iterator();
 }
 
-void coroutine::on_timer() {
+void coroutine::on_event(evutil_socket_t fd, int flag) {
+    set_value(flag);
     resume();
 }

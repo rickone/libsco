@@ -1,7 +1,7 @@
 Target = libasyn.so
 Source = $(wildcard src/*.cpp src/*.c)
 Test = $(wildcard test/*.cpp test/*.c)
-Lib = box
+Lib = box event
 LibPath =
 Include =
 Define = _XOPEN_SOURCE
