@@ -13,12 +13,10 @@
 #include "asyn_worker.h"
 #include "asyn_master.h"
 #include "asyn_coroutine.h"
-#include "asyn_timer.h"
-#include "asyn_poller.h"
+#include "asyn_event.h"
 #include "asyn_except.h"
 
 using namespace asyn;
-using namespace std::chrono_literals;
 
 static pthread_key_t s_context_key;
 static pthread_once_t s_context_once = PTHREAD_ONCE_INIT;
@@ -30,6 +28,13 @@ static void make_context_key() {
 static void* work_routine(void* arg) {
     ((worker*)arg)->run();
     return nullptr;
+}
+
+worker::~worker() {
+    if (_event_base) {
+        event_base_free(_event_base);
+        _event_base = nullptr;
+    }
 }
 
 worker* worker::current() {
@@ -46,22 +51,22 @@ void worker::run(coroutine* self) {
         self = co.get();
     }
     _self = self;
-
-    _poller.init();
     _request_co_count = REQUEST_CO_COUNT;
 
     pthread_once(&s_context_once, make_context_key);
     pthread_setspecific(s_context_key, this);
 
-    master* master = master::inst();
-    while (master->is_startup()) {
-        process_new_coroutines();
-        process_dead_coroutines();
-        process_paused_coroutines();
+    _event_base = event_base_new();
+    runtime_assert(_event_base, "");
 
-        int64_t next_tick_ns = _timer.tick();
-        _poller.poll(next_tick_ns);
-    }
+#ifdef ASYN_DEBUG
+    auto event_method = event_base_get_method(_event_base);
+    printf("[ASYN] worker(%p) event_method: %s\n", this, event_method);
+#endif
+
+    add_event(-1, EV_PERSIST, 10'000, this);
+
+    event_base_dispatch(_event_base);
 }
 
 void worker::run_in_thread() {
@@ -112,6 +117,12 @@ void worker::pause() {
     printf("[ASYN] coroutine(%d) pause\n", _self->id());
 #endif
     _self->yield();
+}
+
+void worker::on_event(evutil_socket_t fd, int flag) {
+    process_new_coroutines();
+    process_dead_coroutines();
+    process_paused_coroutines();
 }
 
 void worker::process_new_coroutines() {

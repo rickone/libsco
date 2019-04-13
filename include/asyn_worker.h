@@ -4,19 +4,17 @@
 #include <list>
 #include <memory>
 #include <unordered_map>
+#include "asyn_event.h"
 #include "asyn_coroutine.h"
-#include "asyn_timer.h"
-#include "asyn_poller.h"
-#include "asyn_lockfree_queue.h"
 
 namespace asyn {
 
 #define REQUEST_CO_COUNT 8
 
-class worker {
+class worker : public event_trigger {
 public:
     worker() = default;
-    ~worker() = default;
+    virtual ~worker();
 
     static worker* current();
 
@@ -26,10 +24,11 @@ public:
     void bind_cpu_core(int cpu_core);
     void pause();
 
+    virtual void on_event(evutil_socket_t fd, int flag) override;
+
     coroutine* co_self() { return _self; }
     void set_co_self(coroutine* self) { _self = self; }
-    timer* timer_inst() { return &_timer; }
-    poller* poller_inst() { return &_poller; }
+    struct event_base* event_inst() { return _event_base; }
 
 private:
     void process_new_coroutines();
@@ -38,11 +37,10 @@ private:
 
     pthread_t _thread = (pthread_t)0;
     coroutine* _self = nullptr;
-    timer _timer;
-    poller _poller;
     std::list<std::shared_ptr<coroutine>> _coroutines;
     std::unordered_map<int, std::shared_ptr<coroutine>> _paused_coroutines;
     int _request_co_count = 0;
+    struct event_base* _event_base = nullptr;
 };
 
 } // asyn

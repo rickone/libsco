@@ -2,7 +2,6 @@
 
 #include <atomic>
 #include <utility>
-#include "asyn_lockfree_queue.h"
 
 namespace asyn {
 

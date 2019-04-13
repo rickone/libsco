@@ -43,11 +43,11 @@ void foo4() {
 }
 
 int main() {
-    asyn::start(foo0);
-    asyn::start(foo1);
+    //asyn::start(foo0);
+    //asyn::start(foo1);
     asyn::start(foo2);
     asyn::start(foo3);
-    asyn::start(foo4);
+    //asyn::start(foo4);
 
     asyn::sleep_for(11s);
     return 0;

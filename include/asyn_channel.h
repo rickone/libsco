@@ -1,12 +1,13 @@
 #pragma once
 
+#include <chrono>
 #include "box.h"
 #include "asyn_lockfree_queue.h"
-#include "asyn_timer.h"
+#include "asyn_event.h"
 
 namespace asyn {
 
-class channel : public timer::trigger{
+class channel : public event_trigger {
 public:
     channel() = default;
     virtual ~channel() = default;
@@ -19,7 +20,7 @@ public:
     box::object wait_obj();
     bool wait_obj_until(const std::chrono::steady_clock::time_point& tp, box::object& obj);
 
-    virtual void on_timer() override;
+    virtual void on_event(evutil_socket_t fd, int flag) override;
 
     template<typename T>
     void send(T val) {

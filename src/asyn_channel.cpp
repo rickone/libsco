@@ -29,16 +29,21 @@ box::object channel::wait_obj() {
 }
 
 bool channel::wait_obj_until(const std::chrono::steady_clock::time_point& tp, box::object& obj) {
+    int64_t timeout_usec = std::chrono::duration_cast<std::chrono::microseconds>(tp - std::chrono::steady_clock::now()).count();
+    if (timeout_usec <= 0) {
+        return false;
+    }
+
     auto worker = worker::current();
     runtime_assert(worker, "");
 
-    auto timer = worker->timer_inst();
-    timer->add_trigger(tp, this);
+    auto timer = add_event(-1, 0, timeout_usec, this);
+    runtime_assert(timer, "");
 
     _timeout = false;
     while (!_timeout) {
         if (_queue.pop(obj)) {
-            timer->remove_trigger(tp, this);
+            evtimer_del(timer);
             return true;
         }
 
@@ -48,6 +53,8 @@ bool channel::wait_obj_until(const std::chrono::steady_clock::time_point& tp, bo
     return false;
 }
 
-void channel::on_timer() {
-    _timeout = true;
+void channel::on_event(evutil_socket_t fd, int flag) {
+    if (flag & EV_TIMEOUT) {
+        _timeout = true;
+    }
 }
