@@ -1,9 +1,10 @@
-#include "asyn_master.h"
+#include "sco_master.h"
+#include <vector>
 #include <unistd.h>
 #include <signal.h>
-#include "asyn_env.h"
+#include "sco_env.h"
 
-using namespace asyn;
+using namespace sco;
 
 static void on_quit(int sig) {
     master::inst()->quit(1);
@@ -18,7 +19,7 @@ master* master::inst() {
 }
 
 void master::enter() {
-    auto co = start_coroutine(nullptr);
+    auto co = start_routine(nullptr);
 
     _master_co.init();
     co->swap(&_master_co);
@@ -38,7 +39,7 @@ void master::main() {
     auto env = env::inst();
     env->init();
 
-    int worker_num = env->get_env_int("ASYN_WORKER_NUM");
+    int worker_num = env->get_env_int("SCO_WORKER_NUM");
     int cpu_num = (int)sysconf(_SC_NPROCESSORS_ONLN);
     if (worker_num <= 0) {
         worker_num = cpu_num;
@@ -54,7 +55,7 @@ void master::main() {
         workers[i]->run_in_thread();
     }
 
-    bool bind_cpu_core = env->get_env_bool("ASYN_BIND_CPU_CORE");
+    bool bind_cpu_core = env->get_env_bool("SCO_BIND_CPU_CORE");
     if (bind_cpu_core) {
         for (int i = 0; i < worker_num && i < cpu_num; i++) {
             workers[i]->bind_cpu_core(i);
@@ -69,14 +70,14 @@ void master::main() {
     _exit(_code);
 }
 
-std::shared_ptr<coroutine> master::start_coroutine(const coroutine::func_t& func) {
-    auto co = std::make_shared<coroutine>(func);
-    _coroutines.push(co);
+std::shared_ptr<routine> master::start_routine(const routine::func_t& func) {
+    auto co = std::make_shared<routine>(func);
+    _routines.push(co);
     return co;
 }
 
-std::shared_ptr<coroutine> master::pop_coroutine() {
-    std::shared_ptr<coroutine> co;
-    _coroutines.pop(co);
+std::shared_ptr<routine> master::pop_routine() {
+    std::shared_ptr<routine> co;
+    _routines.pop(co);
     return co;
 }

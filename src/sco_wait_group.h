@@ -2,9 +2,9 @@
 
 #include <functional>
 #include <atomic>
-#include "asyn_master.h"
+#include "sco_master.h"
 
-namespace asyn {
+namespace sco {
 
 class wait_group {
 public:    
@@ -21,15 +21,15 @@ public:
     template<typename F>
     void start(const F& f) {
         _count.fetch_add(1, std::memory_order_release);
-        coroutine::func_t func = [f, this](){
+        routine::func_t func = [f, this](){
             f();
             done();
         };
-        master::inst()->start_coroutine(func);
+        master::inst()->start_routine(func);
     }
 
 private:
     std::atomic<int> _count;
 };
 
-} // asyn
+} // sco

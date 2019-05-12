@@ -1,8 +1,8 @@
-#include "asyn.h"
+#include "sco.h"
 #include <cstdio>
 #include <mutex>
 
-static asyn::mutex s_mutex;
+static sco::mutex s_mutex;
 static std::vector<int> s_result;
 
 bool is_prime(int n) {
@@ -32,7 +32,7 @@ void foo(int n) {
 }
 
 int main() {
-    asyn::wait_group wg;
+    sco::wait_group wg;
 
     for (int i = 2; i < 1000; i++) {
         wg.start(std::bind(foo, i));

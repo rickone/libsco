@@ -3,9 +3,9 @@
 #include <dlfcn.h>
 #include <string>
 #include <functional>
-#include "asyn_except.h"
+#include "sco_except.h"
 
-namespace asyn {
+namespace sco {
 
 class dlfunc {
 public:
@@ -71,7 +71,7 @@ private:
     void* _addr = nullptr;
 };
 
-#define sys_hook(func) static asyn::dlfunc s_##func;
+#define sys_hook(func) static sco::dlfunc s_##func;
 #define sys_org(func) s_##func.next(#func)(func)
 
-} // asyn
+} // sco

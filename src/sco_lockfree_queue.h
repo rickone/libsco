@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-namespace asyn {
+namespace sco {
 
 template<typename T>
 class lockfree_queue {
@@ -78,4 +78,4 @@ private:
     std::atomic<node_t*> _tail;
 };
 
-} // asyn
+} // sco

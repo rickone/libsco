@@ -1,9 +1,9 @@
-#include "asyn.h"
+#include "sco.h"
 #include <cstdio>
 
 using namespace std::chrono_literals;
 
-static asyn::mutex s_mutex;
+static sco::mutex s_mutex;
 static std::vector<int> s_result;
 
 bool is_prime(int n) {
@@ -34,10 +34,10 @@ void foo(int n) {
 
 int main() {
     for (int i = 2; i < 1000; i++) {
-        asyn::start(std::bind(foo, i));
+        sco::start(std::bind(foo, i));
     }
 
-    asyn::sleep_for(1s);
+    sco::sleep_for(1s);
 
     s_mutex.lock();
     puts("prime number:");

@@ -10,13 +10,13 @@
 #include <mach/thread_act.h>
 #include <pthread.h>
 #endif
-#include "asyn_worker.h"
-#include "asyn_master.h"
-#include "asyn_coroutine.h"
-#include "asyn_event.h"
-#include "asyn_except.h"
+#include "sco_worker.h"
+#include "sco_master.h"
+#include "sco_routine.h"
+#include "sco_event.h"
+#include "sco_except.h"
 
-using namespace asyn;
+using namespace sco;
 
 static pthread_key_t s_context_key;
 static pthread_once_t s_context_once = PTHREAD_ONCE_INIT;
@@ -42,11 +42,11 @@ worker* worker::current() {
     return (worker*)pthread_getspecific(s_context_key);
 }
 
-void worker::run(coroutine* self) {
-    std::shared_ptr<coroutine> co;
+void worker::run(routine* self) {
+    std::shared_ptr<routine> co;
 
     if (!self) {
-        co = std::make_shared<coroutine>(nullptr);
+        co = std::make_shared<routine>(nullptr);
         co->init();
         self = co.get();
     }
@@ -59,9 +59,9 @@ void worker::run(coroutine* self) {
     _event_base = event_base_new();
     runtime_assert(_event_base, "");
 
-#ifdef ASYN_DEBUG
+#ifdef SCO_DEBUG
     auto event_method = event_base_get_method(_event_base);
-    printf("[ASYN] worker(%p) event_method: %s\n", this, event_method);
+    printf("[SCO] worker(%p) event_method: %s\n", this, event_method);
 #endif
 
     add_event(-1, EV_PERSIST, 10'000, this);
@@ -108,28 +108,28 @@ void worker::pause() {
         return;
     }
 
-    auto ret = _paused_coroutines.emplace(_self->id(), _self->shared_from_this());
+    auto ret = _paused_routines.emplace(_self->id(), _self->shared_from_this());
     if (!ret.second) {
         return;
     }
 
-#ifdef ASYN_DEBUG
-    printf("[ASYN] coroutine(%d) pause\n", _self->id());
+#ifdef SCO_DEBUG
+    printf("[SCO] routine(%d) pause\n", _self->id());
 #endif
     _self->yield();
 }
 
 void worker::on_event(evutil_socket_t fd, int flag) {
-    process_new_coroutines();
-    process_dead_coroutines();
-    process_paused_coroutines();
+    process_new_routines();
+    process_dead_routines();
+    process_paused_routines();
 }
 
-void worker::process_new_coroutines() {
+void worker::process_new_routines() {
     auto master = master::inst();
     int count = 0;
     for (; count < _request_co_count; count++) {
-        auto co = master->pop_coroutine();
+        auto co = master->pop_routine();
         if (!co) {
             break;
         }
@@ -137,10 +137,10 @@ void worker::process_new_coroutines() {
         try {
             co->resume();
         } catch (std::exception& err) {
-            fprintf(stderr, "[ASYN] coroutine(%d) resume error: %s\n", co->id(), err.what());
+            fprintf(stderr, "[SCO] routine(%d) resume error: %s\n", co->id(), err.what());
         }
         
-        _coroutines.push_back(co);
+        _routines.push_back(co);
     }
 
     if (count == _request_co_count) {
@@ -150,25 +150,25 @@ void worker::process_new_coroutines() {
     }
 }
 
-void worker::process_dead_coroutines() {
-    auto it = _coroutines.begin();
-    auto it_end = _coroutines.end();
+void worker::process_dead_routines() {
+    auto it = _routines.begin();
+    auto it_end = _routines.end();
     while (it != it_end) {
         auto& co = *it;
         if (co->status() == COROUTINE_DEAD) {
-            _coroutines.erase(it++);
+            _routines.erase(it++);
         } else {
             ++it;
         }
     }
 }
 
-void worker::process_paused_coroutines() {
-    auto it = _paused_coroutines.begin();
-    auto it_end = _paused_coroutines.end();
+void worker::process_paused_routines() {
+    auto it = _paused_routines.begin();
+    auto it_end = _paused_routines.end();
     while (it != it_end) {
         auto co = it->second;
-        _paused_coroutines.erase(it++);
+        _paused_routines.erase(it++);
 
         co->resume();
     }

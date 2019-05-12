@@ -1,18 +1,18 @@
-#include "asyn_event.h"
-#include "asyn_except.h"
-#include "asyn_worker.h"
+#include "sco_event.h"
+#include "sco_except.h"
+#include "sco_worker.h"
 
-using namespace asyn;
+using namespace sco;
 
 static void event_handler(evutil_socket_t fd, short flag, void* arg) {
-#ifdef ASYN_DEBUG
-    printf("[ASYN] on_event(%d, %d, %p)\n", fd, flag, arg);
+#ifdef SCO_DEBUG
+    printf("[SCO] on_event(%d, %d, %p)\n", fd, flag, arg);
 #endif
     event_trigger* trigger = (event_trigger*)arg;
     trigger->on_event(fd, (int)flag);
 }
 
-struct event* asyn::add_event(evutil_socket_t fd, int flag, int64_t timeout_usec, event_trigger* trigger) {
+struct event* sco::add_event(evutil_socket_t fd, int flag, int64_t timeout_usec, event_trigger* trigger) {
     auto worker = worker::current();
     runtime_assert(worker, "");
 
@@ -36,7 +36,7 @@ struct event* asyn::add_event(evutil_socket_t fd, int flag, int64_t timeout_usec
     return event;
 }
 
-int asyn::wait_event(evutil_socket_t fd, int flag, int64_t timeout_usec) {
+int sco::wait_event(evutil_socket_t fd, int flag, int64_t timeout_usec) {
     auto worker = worker::current();
     runtime_assert(worker, "");
 
@@ -46,5 +46,5 @@ int asyn::wait_event(evutil_socket_t fd, int flag, int64_t timeout_usec) {
     add_event(fd, flag, timeout_usec, co);
     co->yield();
 
-    return co->get_value().load<int>();
+    return co->event_flag();
 }

@@ -3,7 +3,7 @@
 #include <atomic>
 #include <utility>
 
-namespace asyn {
+namespace sco {
 
 class mutex {
 public:    
@@ -19,4 +19,4 @@ private:
     std::atomic<int> _cid;
 };
 
-} // asyn
+} // sco

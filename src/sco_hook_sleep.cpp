@@ -1,10 +1,10 @@
-#include "asyn_dlfunc.h"
+#include "sco_dlfunc.h"
 #include <cstdio>
 #include <unistd.h> // usleep
 #include <time.h>
-#include "asyn.h"
+#include "sco.h"
 
-using namespace asyn;
+using namespace sco;
 
 sys_hook(sleep)
 unsigned int sleep(unsigned int seconds) {
@@ -12,7 +12,7 @@ unsigned int sleep(unsigned int seconds) {
         return sys_org(sleep)(seconds);
     }
 
-    asyn::sleep_for(std::chrono::seconds(seconds));
+    sco::sleep_for(std::chrono::seconds(seconds));
     return 0;
 }
 
@@ -22,7 +22,7 @@ int usleep(useconds_t usec) {
         return sys_org(usleep)(usec);
     }
 
-    asyn::sleep_for(std::chrono::microseconds(usec));
+    sco::sleep_for(std::chrono::microseconds(usec));
     return 0;
 }
 
@@ -33,6 +33,6 @@ int nanosleep(const struct timespec *req, struct timespec *rem) {
     }
 
     int64_t ns = (int64_t)req->tv_sec * 1'000'000'000 + req->tv_nsec;
-    asyn::sleep_for(std::chrono::nanoseconds(ns));
+    sco::sleep_for(std::chrono::nanoseconds(ns));
     return 0;
 }

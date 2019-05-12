@@ -1,4 +1,4 @@
-#include "asyn.h"
+#include "sco.h"
 #include <cstdio>
 
 using namespace std::chrono_literals;
@@ -9,8 +9,8 @@ void foo(int i) {
 
 int main() {
     for (int i = 0; i < 20; i++) {
-        asyn::start(std::bind(foo, i));
-        asyn::sleep_for(10ms);
+        sco::start(std::bind(foo, i));
+        sco::sleep_for(10ms);
     }
     return 0;
 }

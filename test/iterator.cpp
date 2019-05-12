@@ -1,4 +1,4 @@
-#include "asyn.h"
+#include "sco.h"
 #include <cstdio>
 #include <cassert>
 
@@ -29,7 +29,7 @@ void foo(int start, int n) {
     for (int i = 0; i < n; i++) {
         int x = start + i;
         if (is_prime(x)) {
-            asyn::yield(x);
+            sco::yield(x);
         }
     }
 }
@@ -37,24 +37,24 @@ void foo(int start, int n) {
 void test() {
     for (int i = 0; i < 10; ++i) {
         if (i == 5) {
-            asyn::yield_break(100);
+            sco::yield_break(100);
         }
 
-        asyn::yield(i * i);
+        sco::yield(i * i);
     }
 }
 
 int main() {
-    for (auto& obj : asyn::coroutine(hello)) {
+    for (auto& obj : sco::coroutine(hello)) {
         obj.clear();
         assert(false);
     }
 
-    for (auto& obj : asyn::coroutine(std::bind(foo, 2, 1000))) {
+    for (auto& obj : sco::coroutine(std::bind(foo, 2, 1000))) {
         printf("prime=%d\n", obj.load<int>());
     }
 
-    for (auto& obj : asyn::coroutine(test)) {
+    for (auto& obj : sco::coroutine(test)) {
         printf("n=%d\n", obj.load<int>());
     }
     return 0;

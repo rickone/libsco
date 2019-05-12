@@ -1,4 +1,4 @@
-#include "asyn.h"
+#include "sco.h"
 #include <cstdio>
 #include <thread>
 #include <unistd.h>
@@ -8,8 +8,8 @@ using namespace std::chrono_literals;
 
 void foo0() {
     for (int i = 0; i < 10; i++) {
-        printf("asyn::sleep_for i=%d\n", i);
-        asyn::sleep_for(10ms);
+        printf("sco::sleep_for i=%d\n", i);
+        sco::sleep_for(10ms);
     }
 }
 
@@ -43,12 +43,12 @@ void foo4() {
 }
 
 int main() {
-    //asyn::start(foo0);
-    //asyn::start(foo1);
-    asyn::start(foo2);
-    asyn::start(foo3);
-    //asyn::start(foo4);
+    //sco::start(foo0);
+    //sco::start(foo1);
+    sco::start(foo2);
+    sco::start(foo3);
+    //sco::start(foo4);
 
-    asyn::sleep_for(11s);
+    sco::sleep_for(11s);
     return 0;
 }

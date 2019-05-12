@@ -1,6 +1,6 @@
-#include "asyn.h"
+#include "sco.h"
 
-using namespace asyn;
+using namespace sco;
 
 guard g_guard_inst;
 
@@ -12,7 +12,7 @@ guard::~guard() {
     master::inst()->quit();
 }
 
-void asyn::sleep_until(const std::chrono::steady_clock::time_point& tp) {
+void sco::sleep_until(const std::chrono::steady_clock::time_point& tp) {
     int64_t timeout_usec = std::chrono::duration_cast<std::chrono::microseconds>(tp - std::chrono::steady_clock::now()).count();
     if (timeout_usec <= 0) {
         return;

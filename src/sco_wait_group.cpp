@@ -1,7 +1,7 @@
-#include "asyn_wait_group.h"
-#include "asyn_except.h"
+#include "sco_wait_group.h"
+#include "sco_except.h"
 
-using namespace asyn;
+using namespace sco;
 
 wait_group::wait_group() : _count(0) {
 }

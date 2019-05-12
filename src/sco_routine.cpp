@@ -1,24 +1,24 @@
-#include "asyn_coroutine.h"
+#include "sco_routine.h"
 #include <cstdlib> // malloc, free
 #include <cassert>
-#include "asyn_master.h"
-#include "asyn_worker.h"
-#include "asyn_except.h"
+#include "sco_master.h"
+#include "sco_worker.h"
+#include "sco_except.h"
 
-using namespace asyn;
+using namespace sco;
 
-coroutine::coroutine(const func_t& func) : _func(func) {
+routine::routine(const func_t& func) : _func(func) {
     static std::atomic<int> s_next_cid;
     _id = ++s_next_cid;
 }
 
-coroutine::~coroutine() {
+routine::~routine() {
     if (_stack) {
         free(_stack);
     }
 }
 
-coroutine* coroutine::self() {
+routine* routine::self() {
     auto worker = worker::current();
     if (!worker) {
         return nullptr;
@@ -26,22 +26,21 @@ coroutine* coroutine::self() {
     return worker->co_self();
 }
 
-void coroutine::body(coroutine* co) {
+void routine::body(routine* co) {
     if (co->_func) {
         co->_func();
     }
 
-    co->_val.clear();
     co->_status = COROUTINE_DEAD;
 }
 
-void coroutine::init(size_t stack_len) {
+void routine::init(size_t stack_len) {
     if (_status != COROUTINE_UNINIT) {
         return;
     }
 
     if (_func) {
-        auto self = coroutine::self();
+        auto self = routine::self();
 
         getcontext(&_ctx);
 
@@ -50,27 +49,27 @@ void coroutine::init(size_t stack_len) {
         _ctx.uc_stack.ss_size = stack_len;
         _ctx.uc_link = self ? &self->_ctx : nullptr;
 
-        makecontext(&_ctx, (void (*)(void))&coroutine::body, 1, this);
+        makecontext(&_ctx, (void (*)(void))&routine::body, 1, this);
         _status = COROUTINE_SUSPEND;
     } else {
         _status = COROUTINE_RUNNING;
     }
 }
 
-void coroutine::set_self() {
+void routine::set_self() {
     auto worker = worker::current();
     if (worker) {
         worker->set_co_self(this);
     }
 }
 
-void coroutine::swap(coroutine* co) {
+void routine::swap(routine* co) {
     _status = COROUTINE_SUSPEND;
     co->_status = COROUTINE_RUNNING;
     swapcontext(&_ctx, &co->_ctx);
 }
 
-bool coroutine::resume() {
+bool routine::resume() {
     if (_status == COROUTINE_UNINIT) {
         init();
     }
@@ -79,7 +78,7 @@ bool coroutine::resume() {
         return false;
     }
 
-    auto self = coroutine::self();
+    auto self = routine::self();
     runtime_assert(self, "");
 
     _ctx.uc_link = &self->_ctx;
@@ -89,29 +88,21 @@ bool coroutine::resume() {
     return true;
 }
 
-void coroutine::yield() {
+void routine::yield() {
     runtime_assert(_ctx.uc_link, "");
 
     _status = COROUTINE_SUSPEND;
     swapcontext(&_ctx, _ctx.uc_link);
 }
 
-void coroutine::yield_break() {
+void routine::yield_break() {
     runtime_assert(_ctx.uc_link, "");
 
     _status = COROUTINE_DEAD;
     swapcontext(&_ctx, _ctx.uc_link);
 }
 
-iterator coroutine::begin() {
-    return iterator(this);
-}
-
-iterator coroutine::end() {
-    return iterator();
-}
-
-void coroutine::on_event(evutil_socket_t fd, int flag) {
-    set_value(flag);
+void routine::on_event(evutil_socket_t fd, int flag) {
+    _event_flag = flag;
     resume();
 }

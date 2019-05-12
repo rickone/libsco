@@ -1,8 +1,8 @@
-#include "asyn_mutex.h"
-#include "asyn_worker.h"
-#include "asyn_except.h"
+#include "sco_mutex.h"
+#include "sco_worker.h"
+#include "sco_except.h"
 
-using namespace asyn;
+using namespace sco;
 
 void mutex::lock() {
     auto worker = worker::current();
@@ -22,7 +22,7 @@ void mutex::lock() {
 }
 
 void mutex::unlock() {
-    auto self = coroutine::self();
+    auto self = routine::self();
     runtime_assert(self, "");
 
     int self_cid = self->id();

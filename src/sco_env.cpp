@@ -1,8 +1,8 @@
-#include "asyn_env.h"
+#include "sco_env.h"
 #include <unistd.h>
 #include <cstring>
 
-using namespace asyn;
+using namespace sco;
 
 env* env::inst() {
     static env s_inst;

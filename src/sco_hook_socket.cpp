@@ -1,13 +1,13 @@
-#include "asyn_dlfunc.h"
+#include "sco_dlfunc.h"
 #include <unistd.h> // close
 #include <fcntl.h>
 #include <sys/socket.h> // socklen_t
 #include <sys/un.h> // AF_UNIX
 #include <netdb.h> // getnameinfo
 #include <netinet/tcp.h> // TCP_NODELAY
-#include "asyn_master.h"
+#include "sco_master.h"
 
-using namespace asyn;
+using namespace sco;
 
 #ifndef __linux__
 static bool add_nonblock(int fd) {

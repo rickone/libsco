@@ -1,10 +1,10 @@
-#include "asyn_except.h"
+#include "sco_except.h"
 #include <cstdlib>
 #include <cstdarg>
 #include <execinfo.h>
 #include <cxxabi.h>
 
-std::string asyn::backtrace(const char *fmt, ...) {
+std::string sco::backtrace(const char *fmt, ...) {
     va_list args;
     char err_info[512];
 

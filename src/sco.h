@@ -1,13 +1,13 @@
 #pragma once
 
 #include <type_traits>
-#include "asyn_master.h"
-#include "asyn_mutex.h"
-#include "asyn_wait_group.h"
-#include "asyn_channel.h"
-#include "asyn_except.h"
+#include "sco_master.h"
+#include "sco_mutex.h"
+#include "sco_wait_group.h"
+#include "sco_channel.h"
+#include "sco_except.h"
 
-namespace asyn {
+namespace sco {
 
 class guard {
 public:
@@ -17,22 +17,21 @@ public:
 
 extern guard g_guard_inst;
 
-template<typename F, typename C>
-inline std::shared_ptr<channel> start_impl(const F& f, C&&) {
-    auto ch = std::make_shared<channel>();
-    coroutine::func_t func = [f, ch](){
+template<typename F>
+inline auto start_impl(const F& f) {
+    auto ch = std::make_shared<channel<decltype(f())>>();
+    routine::func_t func = [f, ch](){
         auto r = f();
         ch->send(r);
     };
-    master::inst()->start_coroutine(func);
+    master::inst()->start_routine(func);
     return ch;
 }
 
 template<typename F>
-inline std::shared_ptr<channel> start_impl(const F& f, std::true_type&&) {
-    coroutine::func_t func = f;
-    master::inst()->start_coroutine(func);
-    return nullptr;
+inline void start_impl(const F& f, std::true_type&&) {
+    routine::func_t func = f;
+    master::inst()->start_routine(func);
 }
 
 template<typename F>
@@ -59,7 +58,7 @@ inline void pause() {
 
 inline void quit(int code) {
     master::inst()->quit(code);
-    coroutine::self()->yield_break();
+    routine::self()->yield_break();
 }
 
-} // asyn
+} // sco

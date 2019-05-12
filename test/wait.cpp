@@ -1,4 +1,4 @@
-#include "asyn.h"
+#include "sco.h"
 #include <cstdio>
 #include <chrono>
 
@@ -10,15 +10,15 @@ int foo(int start, int n) {
     for (int i = 0; i < n; i++) {
         int x = start + i;
         //printf("foo i=%d\n", i);
-        //asyn::sleep_for(10ms);
-        asyn::sleep_until(begin + std::chrono::milliseconds(10 * (i + 1)));
+        //sco::sleep_for(10ms);
+        sco::sleep_until(begin + std::chrono::milliseconds(10 * (i + 1)));
         sum += x;
     }
     return sum;
 }
 
 void test_wait() {
-    auto ch = asyn::start(std::bind(foo, 1, 100));
+    auto ch = sco::start(std::bind(foo, 1, 100));
     auto s = ch->wait<int>();
 
     printf("s=%d\n", s);
@@ -26,7 +26,7 @@ void test_wait() {
 
 template <class Rep, class Period>
 void test_wait_for(const std::chrono::duration<Rep, Period>& dtn) {
-    auto ch = asyn::start(std::bind(foo, 1, 100));
+    auto ch = sco::start(std::bind(foo, 1, 100));
     int s = 0;
     
     bool succ = ch->wait_for(dtn, s);

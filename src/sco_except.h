@@ -5,7 +5,7 @@
 #include <cerrno>
 #include <cstring>
 
-namespace asyn {
+namespace sco {
 
 std::string backtrace(const char *fmt, ...);
 
@@ -23,4 +23,4 @@ std::string backtrace(const char *fmt, ...);
     if (!(condition)) \
         runtime_throw_std(name)
 
-} // asyn
+} // sco
