@@ -3,7 +3,7 @@
 #include <chrono>
 #include "sco_lockfree_queue.h"
 #include "sco_event.h"
-#include "sco_worker.h"
+#include "sco_scheduler.h"
 #include "sco_except.h"
 
 namespace sco {
@@ -26,15 +26,15 @@ public:
     }
 
     void wait(T& val) {
-        auto worker = worker::current();
-        runtime_assert(worker, "");
+        auto scheduler = scheduler::current();
+        runtime_assert(scheduler, "");
 
         while (true) {
             if (recv(val)) {
                 return val;
             }
 
-            worker->pause();
+            scheduler->pause();
         }
     }
 
@@ -44,8 +44,8 @@ public:
             return false;
         }
 
-        auto worker = worker::current();
-        runtime_assert(worker, "");
+        auto scheduler = scheduler::current();
+        runtime_assert(scheduler, "");
 
         auto timer = add_event(-1, 0, timeout_usec, this);
         runtime_assert(timer, "");
@@ -57,7 +57,7 @@ public:
                 return true;
             }
 
-            worker->pause();
+            scheduler->pause();
         }
 
         return false;

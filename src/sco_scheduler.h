@@ -11,12 +11,12 @@ namespace sco {
 
 #define REQUEST_CO_COUNT 8
 
-class worker : public event_trigger {
+class scheduler : public event_trigger {
 public:
-    worker() = default;
-    virtual ~worker();
+    scheduler() = default;
+    virtual ~scheduler();
 
-    static worker* current();
+    static scheduler* current();
 
     void run(routine* self = nullptr);
     void run_in_thread();

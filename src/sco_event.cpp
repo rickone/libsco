@@ -1,6 +1,6 @@
 #include "sco_event.h"
 #include "sco_except.h"
-#include "sco_worker.h"
+#include "sco_scheduler.h"
 
 using namespace sco;
 
@@ -13,10 +13,10 @@ static void event_handler(evutil_socket_t fd, short flag, void* arg) {
 }
 
 struct event* sco::add_event(evutil_socket_t fd, int flag, int64_t timeout_usec, event_trigger* trigger) {
-    auto worker = worker::current();
-    runtime_assert(worker, "");
+    auto scheduler = scheduler::current();
+    runtime_assert(scheduler, "");
 
-    auto base = worker->event_inst();
+    auto base = scheduler->event_inst();
     runtime_assert(base, "");
 
     auto event = event_new(base, fd, (short)flag, event_handler, trigger);
@@ -34,17 +34,4 @@ struct event* sco::add_event(evutil_socket_t fd, int flag, int64_t timeout_usec,
     runtime_assert(ret == 0, "");
 
     return event;
-}
-
-int sco::wait_event(evutil_socket_t fd, int flag, int64_t timeout_usec) {
-    auto worker = worker::current();
-    runtime_assert(worker, "");
-
-    auto co = worker->co_self();
-    runtime_assert(co, "");
-
-    add_event(fd, flag, timeout_usec, co);
-    co->yield();
-
-    return co->event_flag();
 }

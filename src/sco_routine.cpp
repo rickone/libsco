@@ -2,7 +2,7 @@
 #include <cstdlib> // malloc, free
 #include <cassert>
 #include "sco_master.h"
-#include "sco_worker.h"
+#include "sco_scheduler.h"
 #include "sco_except.h"
 
 using namespace sco;
@@ -19,11 +19,11 @@ routine::~routine() {
 }
 
 routine* routine::self() {
-    auto worker = worker::current();
-    if (!worker) {
+    auto scheduler = scheduler::current();
+    if (!scheduler) {
         return nullptr;
     }
-    return worker->co_self();
+    return scheduler->co_self();
 }
 
 void routine::body(routine* co) {
@@ -57,9 +57,9 @@ void routine::init(size_t stack_len) {
 }
 
 void routine::set_self() {
-    auto worker = worker::current();
-    if (worker) {
-        worker->set_co_self(this);
+    auto scheduler = scheduler::current();
+    if (scheduler) {
+        scheduler->set_co_self(this);
     }
 }
 
@@ -100,6 +100,14 @@ void routine::yield_break() {
 
     _status = COROUTINE_DEAD;
     swapcontext(&_ctx, _ctx.uc_link);
+}
+
+int routine::wait_event(evutil_socket_t fd, int flag, int64_t timeout_usec) {
+    runtime_assert(_status == COROUTINE_RUNNING, "");
+
+    add_event(fd, flag, timeout_usec, this);
+    yield();
+    return _event_flag;
 }
 
 void routine::on_event(evutil_socket_t fd, int flag) {

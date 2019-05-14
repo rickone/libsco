@@ -1,14 +1,14 @@
 #include "sco_mutex.h"
-#include "sco_worker.h"
+#include "sco_scheduler.h"
 #include "sco_except.h"
 
 using namespace sco;
 
 void mutex::lock() {
-    auto worker = worker::current();
-    runtime_assert(worker, "");
+    auto scheduler = scheduler::current();
+    runtime_assert(scheduler, "");
 
-    auto self = worker->co_self();
+    auto self = scheduler->co_self();
     runtime_assert(self, "");
 
     while (true) {
@@ -17,7 +17,7 @@ void mutex::lock() {
             return;
         }
 
-        worker->pause();
+        scheduler->pause();
     }
 }
 

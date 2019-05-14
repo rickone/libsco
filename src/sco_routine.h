@@ -35,12 +35,12 @@ public:
     bool resume();
     void yield();
     void yield_break();
+    int wait_event(evutil_socket_t fd, int flag, int64_t timeout_usec);
 
     virtual void on_event(evutil_socket_t fd, int flag) override;
 
     int id() const { return _id; }
     int status() const { return _status; }
-    int event_flag() const { return _event_flag; }
 
 private:
     static void body(routine* co);

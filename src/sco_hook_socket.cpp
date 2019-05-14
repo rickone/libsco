@@ -5,7 +5,7 @@
 #include <sys/un.h> // AF_UNIX
 #include <netdb.h> // getnameinfo
 #include <netinet/tcp.h> // TCP_NODELAY
-#include "sco_master.h"
+#include "sco_scheduler.h"
 
 using namespace sco;
 
@@ -27,7 +27,7 @@ static bool add_nonblock(int fd) {
 
 sys_hook(socket)
 int socket(int domain, int type, int protocol) {
-    if (!worker::current()) {
+    if (!scheduler::current()) {
         return sys_org(socket)(domain, type, protocol);
     }
 
@@ -50,8 +50,8 @@ int socket(int domain, int type, int protocol) {
 
 sys_hook(connect)
 int connect(int fd, const struct sockaddr* addr, socklen_t addrlen) {
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return sys_org(connect)(fd, addr, addrlen);
     }
 
@@ -64,7 +64,7 @@ int connect(int fd, const struct sockaddr* addr, socklen_t addrlen) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_WRITE, 3'000'000);
+    int ev = self->wait_event(fd, EV_WRITE, 3'000'000);
     if (ev != EV_WRITE) {
         return -1;
     }
@@ -93,8 +93,8 @@ static int accept_nonblock(int listenfd, struct sockaddr* addr, socklen_t* addrl
 }
 
 int accept(int listenfd, struct sockaddr* addr, socklen_t* addrlen) {
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return sys_org(accept)(listenfd, addr, addrlen);
     }
 
@@ -107,7 +107,7 @@ int accept(int listenfd, struct sockaddr* addr, socklen_t* addrlen) {
         return -1;
     }
 
-    int ev = wait_event(listenfd, EV_READ, 0);
+    int ev = self->wait_event(listenfd, EV_READ, 0);
     if (ev != EV_READ) {
         return -1;
     }
@@ -126,12 +126,12 @@ ssize_t recv(int fd, void* data, size_t len, int flags) {
         return -1;
     }
 
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_READ, 0);
+    int ev = self->wait_event(fd, EV_READ, 0);
     if (ev != EV_READ) {
         return -1;
     }
@@ -150,12 +150,12 @@ ssize_t recvfrom(int fd, void* data, size_t len, int flags, struct sockaddr* add
         return -1;
     }
 
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_READ, 0);
+    int ev = self->wait_event(fd, EV_READ, 0);
     if (ev != EV_READ) {
         return -1;
     }
@@ -174,12 +174,12 @@ ssize_t recvmsg(int fd, struct msghdr* msg, int flags) {
         return -1;
     }
 
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_READ, 0);
+    int ev = self->wait_event(fd, EV_READ, 0);
     if (ev != EV_READ) {
         return -1;
     }
@@ -198,12 +198,12 @@ ssize_t send(int fd, const void* data, size_t len, int flags) {
         return -1;
     }
 
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_WRITE, 0);
+    int ev = self->wait_event(fd, EV_WRITE, 0);
     if (ev != EV_WRITE) {
         return -1;
     }
@@ -222,12 +222,12 @@ ssize_t sendto(int fd, const void* data, size_t len, int flags, const struct soc
         return -1;
     }
 
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_WRITE, 0);
+    int ev = self->wait_event(fd, EV_WRITE, 0);
     if (ev != EV_WRITE) {
         return -1;
     }
@@ -246,12 +246,12 @@ ssize_t sendmsg(int fd, const struct msghdr* msg, int flags) {
         return -1;
     }
 
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_WRITE, 0);
+    int ev = self->wait_event(fd, EV_WRITE, 0);
     if (ev != EV_WRITE) {
         return -1;
     }
@@ -270,12 +270,12 @@ ssize_t pread(int fd, void* data, size_t len, off_t offset) {
         return -1;
     }
 
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_READ, 0);
+    int ev = self->wait_event(fd, EV_READ, 0);
     if (ev != EV_READ) {
         return -1;
     }
@@ -294,12 +294,12 @@ ssize_t read(int fd, void* data, size_t len) {
         return -1;
     }
 
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_READ, 0);
+    int ev = self->wait_event(fd, EV_READ, 0);
     if (ev != EV_READ) {
         return -1;
     }
@@ -318,12 +318,12 @@ ssize_t readv(int fd, const struct iovec* iov, int iovcnt) {
         return -1;
     }
 
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_READ, 0);
+    int ev = self->wait_event(fd, EV_READ, 0);
     if (ev != EV_READ) {
         return -1;
     }
@@ -342,12 +342,12 @@ ssize_t pwrite(int fd, const void* data, size_t len, off_t offset) {
         return -1;
     }
 
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_WRITE, 0);
+    int ev = self->wait_event(fd, EV_WRITE, 0);
     if (ev != EV_WRITE) {
         return -1;
     }
@@ -366,12 +366,12 @@ ssize_t write(int fd, const void* data, size_t len) {
         return -1;
     }
 
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_WRITE, 0);
+    int ev = self->wait_event(fd, EV_WRITE, 0);
     if (ev != EV_WRITE) {
         return -1;
     }
@@ -390,12 +390,12 @@ ssize_t writev(int fd, const struct iovec* iov, int iovcnt) {
         return -1;
     }
 
-    auto worker = worker::current();
-    if (!worker) {
+    auto self = routine::self();
+    if (!self) {
         return -1;
     }
 
-    int ev = wait_event(fd, EV_WRITE, 0);
+    int ev = self->wait_event(fd, EV_WRITE, 0);
     if (ev != EV_WRITE) {
         return -1;
     }

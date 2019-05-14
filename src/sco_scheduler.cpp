@@ -10,7 +10,7 @@
 #include <mach/thread_act.h>
 #include <pthread.h>
 #endif
-#include "sco_worker.h"
+#include "sco_scheduler.h"
 #include "sco_master.h"
 #include "sco_routine.h"
 #include "sco_event.h"
@@ -26,23 +26,23 @@ static void make_context_key() {
 }
 
 static void* work_routine(void* arg) {
-    ((worker*)arg)->run();
+    ((scheduler*)arg)->run();
     return nullptr;
 }
 
-worker::~worker() {
+scheduler::~scheduler() {
     if (_event_base) {
         event_base_free(_event_base);
         _event_base = nullptr;
     }
 }
 
-worker* worker::current() {
+scheduler* scheduler::current() {
     pthread_once(&s_context_once, make_context_key);
-    return (worker*)pthread_getspecific(s_context_key);
+    return (scheduler*)pthread_getspecific(s_context_key);
 }
 
-void worker::run(routine* self) {
+void scheduler::run(routine* self) {
     std::shared_ptr<routine> co;
 
     if (!self) {
@@ -61,7 +61,7 @@ void worker::run(routine* self) {
 
 #ifdef SCO_DEBUG
     auto event_method = event_base_get_method(_event_base);
-    printf("[SCO] worker(%p) event_method: %s\n", this, event_method);
+    printf("[SCO] scheduler(%p) event_method: %s\n", this, event_method);
 #endif
 
     add_event(-1, EV_PERSIST, 10'000, this);
@@ -69,15 +69,15 @@ void worker::run(routine* self) {
     event_base_dispatch(_event_base);
 }
 
-void worker::run_in_thread() {
+void scheduler::run_in_thread() {
     pthread_create(&_thread, nullptr, work_routine, this);
 }
 
-void worker::join() {
+void scheduler::join() {
     pthread_join(_thread, nullptr);
 }
 
-void worker::bind_cpu_core(int cpu_core) {
+void scheduler::bind_cpu_core(int cpu_core) {
     if (cpu_core < 0) {
         return;
     }
@@ -103,7 +103,7 @@ void worker::bind_cpu_core(int cpu_core) {
 #endif // __APPLE__
 }
 
-void worker::pause() {
+void scheduler::pause() {
     if (!_self) {
         return;
     }
@@ -119,13 +119,13 @@ void worker::pause() {
     _self->yield();
 }
 
-void worker::on_event(evutil_socket_t fd, int flag) {
+void scheduler::on_event(evutil_socket_t fd, int flag) {
     process_new_routines();
     process_dead_routines();
     process_paused_routines();
 }
 
-void worker::process_new_routines() {
+void scheduler::process_new_routines() {
     auto master = master::inst();
     int count = 0;
     for (; count < _request_co_count; count++) {
@@ -150,7 +150,7 @@ void worker::process_new_routines() {
     }
 }
 
-void worker::process_dead_routines() {
+void scheduler::process_dead_routines() {
     auto it = _routines.begin();
     auto it_end = _routines.end();
     while (it != it_end) {
@@ -163,7 +163,7 @@ void worker::process_dead_routines() {
     }
 }
 
-void worker::process_paused_routines() {
+void scheduler::process_paused_routines() {
     auto it = _paused_routines.begin();
     auto it_end = _paused_routines.end();
     while (it != it_end) {

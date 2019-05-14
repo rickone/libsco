@@ -3,7 +3,7 @@
 #include <atomic>
 #include "sco_routine.h"
 #include "sco_lockfree_queue.h"
-#include "sco_worker.h"
+#include "sco_scheduler.h"
 
 namespace sco {
 

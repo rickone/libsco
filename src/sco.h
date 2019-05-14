@@ -48,12 +48,12 @@ inline void sleep_for(const std::chrono::duration<Rep, Period>& dtn) {
 }
 
 inline void pause() {
-    auto worker = worker::current();
-    if (!worker) {
+    auto scheduler = scheduler::current();
+    if (!scheduler) {
         return;
     }
 
-    worker->pause();
+    scheduler->pause();
 }
 
 inline void quit(int code) {

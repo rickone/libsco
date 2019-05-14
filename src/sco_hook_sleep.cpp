@@ -8,7 +8,7 @@ using namespace sco;
 
 sys_hook(sleep)
 unsigned int sleep(unsigned int seconds) {
-    if (!worker::current()) {
+    if (!scheduler::current()) {
         return sys_org(sleep)(seconds);
     }
 
@@ -18,7 +18,7 @@ unsigned int sleep(unsigned int seconds) {
 
 sys_hook(usleep)
 int usleep(useconds_t usec) {
-    if (!worker::current()) {
+    if (!scheduler::current()) {
         return sys_org(usleep)(usec);
     }
 
@@ -28,7 +28,7 @@ int usleep(useconds_t usec) {
 
 sys_hook(nanosleep)
 int nanosleep(const struct timespec *req, struct timespec *rem) {
-    if (!worker::current()) {
+    if (!scheduler::current()) {
         return sys_org(nanosleep)(req, rem);
     }
 

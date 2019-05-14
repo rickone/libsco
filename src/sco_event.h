@@ -9,6 +9,5 @@ struct event_trigger {
 };
 
 struct event* add_event(evutil_socket_t fd, int flag, int64_t timeout_usec, event_trigger* trigger);
-int wait_event(evutil_socket_t fd, int flag, int64_t timeout_usec);
 
 } // sco

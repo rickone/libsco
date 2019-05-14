@@ -39,33 +39,33 @@ void master::main() {
     auto env = env::inst();
     env->init();
 
-    int worker_num = env->get_env_int("SCO_WORKER_NUM");
+    int scheduler_num = env->get_env_int("SCO_WORKER_NUM");
     int cpu_num = (int)sysconf(_SC_NPROCESSORS_ONLN);
-    if (worker_num <= 0) {
-        worker_num = cpu_num;
+    if (scheduler_num <= 0) {
+        scheduler_num = cpu_num;
     }
 
-    std::vector<std::shared_ptr<worker>> workers;
-    for (int i = 0; i < worker_num; i++) {
-        workers.emplace_back(new worker());
+    std::vector<std::shared_ptr<scheduler>> schedulers;
+    for (int i = 0; i < scheduler_num; i++) {
+        schedulers.emplace_back(new scheduler());
     }
 
     _startup = true;
-    for (int i = 1; i < worker_num; i++) {
-        workers[i]->run_in_thread();
+    for (int i = 1; i < scheduler_num; i++) {
+        schedulers[i]->run_in_thread();
     }
 
     bool bind_cpu_core = env->get_env_bool("SCO_BIND_CPU_CORE");
     if (bind_cpu_core) {
-        for (int i = 0; i < worker_num && i < cpu_num; i++) {
-            workers[i]->bind_cpu_core(i);
+        for (int i = 0; i < scheduler_num && i < cpu_num; i++) {
+            schedulers[i]->bind_cpu_core(i);
         }
     }
 
-    workers[0]->run(&_master_co);
+    schedulers[0]->run(&_master_co);
 
-    for (int i = 1; i < worker_num; i++) {
-        workers[i]->join();
+    for (int i = 1; i < scheduler_num; i++) {
+        schedulers[i]->join();
     }
     _exit(_code);
 }

@@ -11,8 +11,8 @@ void wait_group::done() {
 }
 
 void wait_group::wait() {
-    auto worker = worker::current();
-    runtime_assert(worker, "");
+    auto scheduler = scheduler::current();
+    runtime_assert(scheduler, "");
 
     while (true) {
         int count = _count.load(std::memory_order_consume);
@@ -20,6 +20,6 @@ void wait_group::wait() {
             return;
         }
 
-        worker->pause();
+        scheduler->pause();
     }
 }
