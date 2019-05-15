@@ -1,5 +1,6 @@
 #include "sco_wait_group.h"
 #include "sco_except.h"
+#include "sco_scheduler.h"
 
 using namespace sco;
 

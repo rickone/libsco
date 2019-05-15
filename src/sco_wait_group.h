@@ -2,7 +2,7 @@
 
 #include <functional>
 #include <atomic>
-#include "sco_master.h"
+#include "sco_global_queue.h"
 
 namespace sco {
 
@@ -25,7 +25,7 @@ public:
             f();
             done();
         };
-        master::inst()->start_routine(func);
+        global_queue::inst()->push_routine(func);
     }
 
 private:

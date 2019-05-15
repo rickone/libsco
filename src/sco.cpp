@@ -2,16 +2,6 @@
 
 using namespace sco;
 
-guard g_guard_inst;
-
-guard::guard() {
-    master::inst()->enter();
-}
-
-guard::~guard() {
-    master::inst()->quit();
-}
-
 void sco::sleep_until(const std::chrono::steady_clock::time_point& tp) {
     auto self = routine::self();
     runtime_assert(self, "");

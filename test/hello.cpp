@@ -3,6 +3,8 @@
 
 using namespace std::chrono_literals;
 
+sco::auto_scheduler g_as(1, false);
+
 void foo(int i) {
     printf("[%d] Hello World!\n", i);
 }

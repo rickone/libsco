@@ -11,7 +11,7 @@
 #include <pthread.h>
 #endif
 #include "sco_scheduler.h"
-#include "sco_master.h"
+#include "sco_global_queue.h"
 #include "sco_routine.h"
 #include "sco_event.h"
 #include "sco_except.h"
@@ -42,15 +42,14 @@ scheduler* scheduler::current() {
     return (scheduler*)pthread_getspecific(s_context_key);
 }
 
-void scheduler::run(routine* self) {
-    std::shared_ptr<routine> co;
+void scheduler::run() {
+    std::shared_ptr<routine> co = _swap_co;
 
-    if (!self) {
+    if (!co) {
         co = std::make_shared<routine>(nullptr);
         co->init();
-        self = co.get();
     }
-    _self = self;
+    _self = co.get();
     _request_co_count = REQUEST_CO_COUNT;
 
     pthread_once(&s_context_once, make_context_key);
@@ -67,6 +66,8 @@ void scheduler::run(routine* self) {
     add_event(-1, EV_PERSIST, 10'000, this);
 
     event_base_dispatch(_event_base);
+
+    printf("[SCO] event_base_dispatch exit!\n");
 }
 
 void scheduler::run_in_thread() {
@@ -75,6 +76,14 @@ void scheduler::run_in_thread() {
 
 void scheduler::join() {
     pthread_join(_thread, nullptr);
+}
+
+void scheduler::swap() {
+    auto co = global_queue::inst()->push_routine(nullptr);
+
+    _swap_co = std::make_shared<routine>(std::bind(&scheduler::run, this));
+    _swap_co->init();
+    co->swap(_swap_co.get());
 }
 
 void scheduler::bind_cpu_core(int cpu_core) {
@@ -126,10 +135,10 @@ void scheduler::on_event(evutil_socket_t fd, int flag) {
 }
 
 void scheduler::process_new_routines() {
-    auto master = master::inst();
+    auto q = global_queue::inst();
     int count = 0;
     for (; count < _request_co_count; count++) {
-        auto co = master->pop_routine();
+        auto co = q->pop_routine();
         if (!co) {
             break;
         }

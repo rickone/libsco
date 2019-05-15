@@ -1,7 +1,7 @@
 #include "sco_routine.h"
 #include <cstdlib> // malloc, free
 #include <cassert>
-#include "sco_master.h"
+//#include "sco_master.h"
 #include "sco_scheduler.h"
 #include "sco_except.h"
 
@@ -103,7 +103,7 @@ void routine::yield_break() {
 }
 
 int routine::wait_event(evutil_socket_t fd, int flag, int64_t timeout_usec) {
-    runtime_assert(_status == COROUTINE_RUNNING, "");
+    runtime_assert(_status == COROUTINE_RUNNING, "_status=%d", _status);
 
     add_event(fd, flag, timeout_usec, this);
     yield();
