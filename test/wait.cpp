@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <chrono>
 
+sco::auto_scheduler g_as;
+
 using namespace std::chrono_literals;
 
 int foo(int start, int n) {
@@ -19,7 +21,8 @@ int foo(int start, int n) {
 
 void test_wait() {
     auto ch = sco::start(std::bind(foo, 1, 100));
-    auto s = ch->wait<int>();
+    int s = 0;
+    ch->wait(s);
 
     printf("s=%d\n", s);
 }

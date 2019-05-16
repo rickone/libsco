@@ -18,7 +18,7 @@ public:
     channel& operator=(const channel&) = delete;
 
     void send(const T& val) {
-        _queue.send(val);
+        _queue.push(val);
     }
 
     bool recv(T& val) {
@@ -31,7 +31,7 @@ public:
 
         while (true) {
             if (recv(val)) {
-                return val;
+                break;
             }
 
             scheduler->pause();

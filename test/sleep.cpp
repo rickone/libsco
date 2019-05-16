@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <time.h>
 
+sco::auto_scheduler g_as;
+
 using namespace std::chrono_literals;
 
 void foo0() {

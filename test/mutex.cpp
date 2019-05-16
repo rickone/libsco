@@ -1,5 +1,8 @@
 #include "sco.h"
 #include <cstdio>
+#include <vector>
+
+sco::auto_scheduler g_as;
 
 using namespace std::chrono_literals;
 

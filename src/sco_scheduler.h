@@ -18,10 +18,9 @@ public:
 
     static scheduler* current();
 
-    void run();
+    void run(routine* self = nullptr);
     void run_in_thread();
     void join();
-    void swap();
     void bind_cpu_core(int cpu_core);
     void pause();
 
@@ -38,7 +37,6 @@ private:
 
     pthread_t _thread = (pthread_t)0;
     routine* _self = nullptr;
-    std::shared_ptr<routine> _swap_co;
     std::list<std::shared_ptr<routine>> _routines;
     std::unordered_map<int, std::shared_ptr<routine>> _paused_routines;
     int _request_co_count = 0;

@@ -42,14 +42,15 @@ scheduler* scheduler::current() {
     return (scheduler*)pthread_getspecific(s_context_key);
 }
 
-void scheduler::run() {
-    std::shared_ptr<routine> co = _swap_co;
+void scheduler::run(routine* self) {
+    std::shared_ptr<routine> co;
 
-    if (!co) {
+    if (!self) {
         co = std::make_shared<routine>(nullptr);
         co->init();
+        self = co.get();
     }
-    _self = co.get();
+    _self = self;
     _request_co_count = REQUEST_CO_COUNT;
 
     pthread_once(&s_context_once, make_context_key);
@@ -76,14 +77,6 @@ void scheduler::run_in_thread() {
 
 void scheduler::join() {
     pthread_join(_thread, nullptr);
-}
-
-void scheduler::swap() {
-    auto co = global_queue::inst()->push_routine(nullptr);
-
-    _swap_co = std::make_shared<routine>(std::bind(&scheduler::run, this));
-    _swap_co->init();
-    co->swap(_swap_co.get());
 }
 
 void scheduler::bind_cpu_core(int cpu_core) {

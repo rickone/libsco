@@ -11,7 +11,7 @@
 namespace sco {
 
 template<typename F>
-inline auto start_impl(const F& f) {
+inline auto start_impl(const F& f, std::false_type&&) {
     auto ch = std::make_shared<channel<decltype(f())>>();
     routine::func_t func = [f, ch](){
         auto r = f();

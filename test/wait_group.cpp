@@ -1,6 +1,8 @@
 #include "sco.h"
 #include <cstdio>
-#include <mutex>
+#include <vector>
+
+sco::auto_scheduler g_as;
 
 static sco::mutex s_mutex;
 static std::vector<int> s_result;
