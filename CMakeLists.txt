@@ -10,7 +10,6 @@ add_library(sco SHARED ${SRC})
 
 find_package(LIBEVENT REQUIRED)
 if(LIBEVENT_FOUND)
-    message("libevent ${LIBEVENT_VERSION} found!")
     include_directories(${LIBEVENT_INCLUDE_DIRS})
 else()
     message(FATAL_ERROR "libevent not found!")
@@ -31,3 +30,5 @@ target_link_libraries(wait pthread dl event sco)
 
 add_executable(wait_group ${CMAKE_CURRENT_SOURCE_DIR}/test/wait_group.cpp)
 target_link_libraries(wait_group pthread dl event sco)
+
+install(TARGETS sco LIBRARY DESTINATION lib)

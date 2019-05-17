@@ -10,7 +10,7 @@ namespace sco {
 const int COROUTINE_DEFAULT_STACK_LEN = 1024 * 64;
 
 enum {
-    COROUTINE_UNINIT,
+    COROUTINE_NULL,
     COROUTINE_RUNNING,
     COROUTINE_SUSPEND,
     COROUTINE_DEAD,
@@ -20,7 +20,7 @@ class routine : public std::enable_shared_from_this<routine>, public event_trigg
 public:
     typedef std::function<void(void)> func_t;
     
-    explicit routine(const func_t& func);
+    routine();
     virtual ~routine();
     routine(const routine&) = delete;
     routine(routine&&) = delete;
@@ -29,7 +29,8 @@ public:
 
     static routine* self();
 
-    void init(size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
+    void bind(const func_t& func) { _func = func; }
+    void make(size_t stack_len = COROUTINE_DEFAULT_STACK_LEN);
     void set_self();
     void swap(routine* co);
     bool resume();
@@ -49,7 +50,7 @@ private:
     func_t _func = nullptr;
     void* _stack = nullptr;
     ucontext_t _ctx;
-    int _status = COROUTINE_UNINIT;
+    int _status = COROUTINE_NULL;
     int _event_flag = 0;
 };
 

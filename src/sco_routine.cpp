@@ -7,7 +7,7 @@
 
 using namespace sco;
 
-routine::routine(const func_t& func) : _func(func) {
+routine::routine() {
     static std::atomic<int> s_next_cid;
     _id = ++s_next_cid;
 }
@@ -34,8 +34,8 @@ void routine::body(routine* co) {
     co->_status = COROUTINE_DEAD;
 }
 
-void routine::init(size_t stack_len) {
-    if (_status != COROUTINE_UNINIT) {
+void routine::make(size_t stack_len) {
+    if (_status != COROUTINE_NULL) {
         return;
     }
 
@@ -70,8 +70,8 @@ void routine::swap(routine* co) {
 }
 
 bool routine::resume() {
-    if (_status == COROUTINE_UNINIT) {
-        init();
+    if (_status == COROUTINE_NULL) {
+        make();
     }
     
     if (_status != COROUTINE_SUSPEND) {

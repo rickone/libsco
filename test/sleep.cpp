@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <time.h>
 
-sco::auto_scheduler g_as;
+sco::scheduler::auto_attach g_saa;
 
 using namespace std::chrono_literals;
 

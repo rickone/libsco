@@ -11,8 +11,10 @@
 #include <pthread.h>
 #endif
 #include "sco_scheduler.h"
+#include <vector>
+#include <unistd.h>
 #include "sco_global_queue.h"
-#include "sco_routine.h"
+#include "sco_env.h"
 #include "sco_event.h"
 #include "sco_except.h"
 
@@ -25,7 +27,7 @@ static void make_context_key() {
     pthread_key_create(&s_context_key, nullptr);
 }
 
-static void* work_routine(void* arg) {
+static void* thread_routine(void* arg) {
     ((scheduler*)arg)->run();
     return nullptr;
 }
@@ -38,19 +40,56 @@ scheduler::~scheduler() {
 }
 
 scheduler* scheduler::current() {
-    pthread_once(&s_context_once, make_context_key);
+    //pthread_once(&s_context_once, make_context_key);
     return (scheduler*)pthread_getspecific(s_context_key);
 }
 
-void scheduler::run(routine* self) {
+void scheduler::launch(routine* self) {
+    int scheduler_num = env::inst()->get_env_int("SCO_SCHEDULER_NUM");
+    int cpu_num = (int)sysconf(_SC_NPROCESSORS_ONLN);
+    if (scheduler_num <= 0) {
+        scheduler_num = cpu_num;
+    }
+
+    std::vector<std::shared_ptr<scheduler>> schedulers;
+    for (int i = 0; i < scheduler_num; i++) {
+        schedulers.emplace_back(new scheduler());
+    }
+
+    for (int i = 1; i < scheduler_num; i++) {
+        schedulers[i]->run_thread();
+    }
+
+    bool bind_cpu_core = env::inst()->get_env_bool("SCO_BIND_CPU_CORE");
+    if (bind_cpu_core) {
+        for (int i = 0; i < scheduler_num && i < cpu_num; i++) {
+            schedulers[i]->bind_cpu_core(i);
+        }
+    }
+
+    if (self) {
+        schedulers[0]->set_co_self(self);
+    }
+    schedulers[0]->run();
+}
+
+void scheduler::attach() {
+    static routine s_launch_co;
+    s_launch_co.bind(std::bind(&scheduler::launch, &s_launch_co));
+    s_launch_co.make();
+
+    auto co = global_queue::inst()->push_routine(nullptr);
+    co->swap(&s_launch_co);
+}
+
+void scheduler::run() {
     std::shared_ptr<routine> co;
 
-    if (!self) {
-        co = std::make_shared<routine>(nullptr);
-        co->init();
-        self = co.get();
+    if (!_self) {
+        co = std::make_shared<routine>();
+        co->make();
+        _self = co.get();
     }
-    _self = self;
     _request_co_count = REQUEST_CO_COUNT;
 
     pthread_once(&s_context_once, make_context_key);
@@ -65,14 +104,11 @@ void scheduler::run(routine* self) {
 #endif
 
     add_event(-1, EV_PERSIST, 10'000, this);
-
     event_base_dispatch(_event_base);
-
-    printf("[SCO] event_base_dispatch exit!\n");
 }
 
-void scheduler::run_in_thread() {
-    pthread_create(&_thread, nullptr, work_routine, this);
+void scheduler::run_thread() {
+    pthread_create(&_thread, nullptr, thread_routine, this);
 }
 
 void scheduler::join() {

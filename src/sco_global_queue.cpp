@@ -8,7 +8,8 @@ global_queue* global_queue::inst() {
 }
 
 std::shared_ptr<routine> global_queue::push_routine(const routine::func_t& func) {
-    auto co = std::make_shared<routine>(func);
+    auto co = std::make_shared<routine>();
+    co->bind(func);
     _routines.push(co);
     return co;
 }

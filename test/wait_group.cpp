@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <vector>
 
-sco::auto_scheduler g_as;
+sco::scheduler::auto_attach g_saa;
 
 static sco::mutex s_mutex;
 static std::vector<int> s_result;

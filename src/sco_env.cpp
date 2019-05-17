@@ -1,11 +1,15 @@
 #include "sco_env.h"
 #include <unistd.h>
 #include <cstring>
+#include <mutex>
 
 using namespace sco;
 
 env* env::inst() {
+    static std::once_flag s_once;
     static env s_inst;
+
+    std::call_once(s_once, std::bind(&env::init, &s_inst));
     return &s_inst;
 }
 

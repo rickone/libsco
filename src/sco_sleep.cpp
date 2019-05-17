@@ -1,10 +1,25 @@
-#include "sco_dlfunc.h"
+#include "sco_sleep.h"
 #include <cstdio>
 #include <unistd.h> // usleep
 #include <time.h>
-#include "sco.h"
+#include "sco_dlfunc.h"
+#include "sco_routine.h"
+#include "sco_scheduler.h"
+#include "sco_except.h"
 
 using namespace sco;
+
+void sco::sleep_until(const std::chrono::steady_clock::time_point& tp) {
+    auto self = routine::self();
+    runtime_assert(self, "");
+
+    int64_t timeout_usec = std::chrono::duration_cast<std::chrono::microseconds>(tp - std::chrono::steady_clock::now()).count();
+    if (timeout_usec <= 0) {
+        return;
+    }
+
+    self->wait_event(-1, 0, timeout_usec);
+}
 
 sys_hook(sleep)
 unsigned int sleep(unsigned int seconds) {

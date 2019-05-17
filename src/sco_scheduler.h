@@ -17,9 +17,11 @@ public:
     virtual ~scheduler();
 
     static scheduler* current();
+    static void launch(routine* self = nullptr);
+    static void attach();
 
-    void run(routine* self = nullptr);
-    void run_in_thread();
+    void run();
+    void run_thread();
     void join();
     void bind_cpu_core(int cpu_core);
     void pause();
@@ -30,6 +32,11 @@ public:
     void set_co_self(routine* self) { _self = self; }
     struct event_base* event_inst() { return _event_base; }
 
+    struct auto_attach {
+        auto_attach() {
+            scheduler::attach();
+        }
+    };
 private:
     void process_new_routines();
     void process_dead_routines();

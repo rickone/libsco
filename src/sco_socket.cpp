@@ -5,7 +5,7 @@
 #include <sys/un.h> // AF_UNIX
 #include <netdb.h> // getnameinfo
 #include <netinet/tcp.h> // TCP_NODELAY
-#include "sco_scheduler.h"
+#include "sco_routine.h"
 
 using namespace sco;
 
@@ -27,7 +27,8 @@ static bool add_nonblock(int fd) {
 
 sys_hook(socket)
 int socket(int domain, int type, int protocol) {
-    if (!scheduler::current()) {
+    auto self = routine::self();
+    if (!self) {
         return sys_org(socket)(domain, type, protocol);
     }
 
